@@ -2,18 +2,35 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { calcPLSummary } from "@/lib/aggregator";
-import type { FinanceRow } from "@/types/finance";
+import type { AccountType, FinanceRow, PLSummary } from "@/types/finance";
 
-const SUMMARY_LABELS: { key: keyof ReturnType<typeof calcPLSummary>; label: string }[] = [
-  { key: "totalRevenue", label: "총 매출" },
-  { key: "totalCogs", label: "매출원가" },
-  { key: "grossProfit", label: "매출총이익" },
-  { key: "totalExpense", label: "판관비" },
-  { key: "operatingProfit", label: "영업이익" },
+type SummaryLabel = {
+  key: keyof PLSummary;
+  label: string;
+  type?: AccountType;
+  separator?: boolean;
+};
+
+const SUMMARY_LABELS: SummaryLabel[] = [
+  { key: "totalRevenue",    label: "총 매출",    type: "revenue" },
+  { key: "totalCogs",       label: "매출원가",   type: "cogs" },
+  { key: "grossProfit",     label: "매출총이익", separator: true },
+  { key: "totalExpense",    label: "판관비",     type: "expense" },
+  { key: "operatingProfit", label: "영업이익",   separator: true },
 ];
 
 function formatKRW(n: number) {
   return n.toLocaleString("ko-KR") + "원";
+}
+
+function groupByTypeAndAccount(rows: FinanceRow[]): Map<AccountType, Map<string, number>> {
+  const map = new Map<AccountType, Map<string, number>>();
+  for (const row of rows) {
+    if (!map.has(row.type)) map.set(row.type, new Map());
+    const inner = map.get(row.type)!;
+    inner.set(row.account, (inner.get(row.account) ?? 0) + row.amount);
+  }
+  return map;
 }
 
 export default async function DashboardPage() {
@@ -29,6 +46,7 @@ export default async function DashboardPage() {
 
   const financeRows = (rows ?? []) as FinanceRow[];
   const summary = financeRows.length > 0 ? calcPLSummary(financeRows) : null;
+  const breakdown = groupByTypeAndAccount(financeRows);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-12">
@@ -55,16 +73,27 @@ export default async function DashboardPage() {
               </span>
             </h2>
             <dl className="space-y-2">
-              {SUMMARY_LABELS.map(({ key, label }) => (
-                <div key={key} className="flex justify-between text-sm">
-                  <dt className="text-slate-500">{label}</dt>
-                  <dd
-                    className={`font-semibold ${
-                      summary[key] < 0 ? "text-red-500" : "text-slate-900"
-                    }`}
-                  >
-                    {formatKRW(summary[key])}
-                  </dd>
+              {SUMMARY_LABELS.map(({ key, label, type, separator }) => (
+                <div key={key}>
+                  {separator && <div className="my-3 border-t border-slate-100" />}
+                  <div className="flex justify-between text-sm">
+                    <dt className={type ? "text-slate-500" : "font-medium text-slate-700"}>
+                      {label}
+                    </dt>
+                    <dd className={`font-semibold ${summary[key] < 0 ? "text-red-500" : "text-slate-900"}`}>
+                      {formatKRW(summary[key])}
+                    </dd>
+                  </div>
+                  {type && breakdown.get(type) && (
+                    <div className="mt-1 space-y-0.5 border-l-2 border-slate-100 pl-3">
+                      {Array.from(breakdown.get(type)!.entries()).map(([account, amount]) => (
+                        <div key={account} className="flex justify-between text-xs">
+                          <span className="text-slate-400">{account}</span>
+                          <span className="text-slate-400">{formatKRW(amount)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </dl>
