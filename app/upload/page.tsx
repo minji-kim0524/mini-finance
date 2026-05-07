@@ -7,5 +7,10 @@ export default async function UploadPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  return <UploadClient />;
+  return (
+    <UploadClient
+      userName={user.user_metadata?.name ?? null}
+      userEmail={user.email ?? ""}
+    />
+  );
 }

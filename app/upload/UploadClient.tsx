@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import type { FinanceRow, PLSummary } from "@/types/finance";
+import UserMenu from "@/components/UserMenu";
 
 type UploadState =
   | { status: "idle" }
@@ -22,7 +23,12 @@ function formatKRW(n: number) {
   return n.toLocaleString("ko-KR") + "원";
 }
 
-export default function UploadClient() {
+interface UploadClientProps {
+  userName: string | null;
+  userEmail: string;
+}
+
+export default function UploadClient({ userName, userEmail }: UploadClientProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -65,11 +71,22 @@ export default function UploadClient() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto max-w-xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">재무 데이터 업로드</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            엑셀 파일(.xlsx, .xls)을 업로드하면 손익을 자동으로 분석합니다.
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-900">재무 데이터 업로드</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              엑셀 파일(.xlsx, .xls)을 업로드하면 손익을 자동으로 분석합니다.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+            >
+              대시보드
+            </Link>
+            <UserMenu name={userName} email={userEmail} />
+          </div>
         </div>
 
         {/* Drop zone */}

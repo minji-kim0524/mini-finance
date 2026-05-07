@@ -4,6 +4,7 @@ import Link from "next/link";
 import { calcPLSummary, groupByMonth } from "@/lib/aggregator";
 import type { AccountType, FinanceRow, PLSummary } from "@/types/finance";
 import MonthlyChart from "./MonthlyChart";
+import UserMenu from "@/components/UserMenu";
 
 type SummaryLabel = {
   key: keyof PLSummary;
@@ -54,16 +55,19 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto max-w-xl space-y-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-slate-900">대시보드</h1>
-            <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+          <h1 className="text-2xl font-semibold text-slate-900">대시보드</h1>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/upload"
+              className="rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              파일 업로드
+            </Link>
+            <UserMenu
+              name={user.user_metadata?.name ?? null}
+              email={user.email ?? ""}
+            />
           </div>
-          <Link
-            href="/upload"
-            className="rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-          >
-            파일 업로드
-          </Link>
         </div>
 
         <MonthlyChart data={monthly} />
