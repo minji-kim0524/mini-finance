@@ -107,7 +107,7 @@ export default async function DashboardPage() {
             {breakdown.get("other") && (
               <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
                 <h2 className="mb-3 text-base font-semibold text-amber-800">미분류 항목</h2>
-                <p className="mb-3 text-xs text-amber-600">AI가 분류하지 못한 계정과목입니다. 직접 확인이 필요합니다.</p>
+                <p className="mb-3 text-xs text-amber-600">자동 분류되지 않은 계정과목입니다. 직접 확인이 필요합니다.</p>
                 <div className="space-y-1">
                   {Array.from(breakdown.get("other")!.entries()).map(([account, amount]) => (
                     <div key={account} className="flex justify-between text-sm">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import Link from "next/link";
 import type { FinanceRow, PLSummary } from "@/types/finance";
 
 type UploadState =
@@ -143,6 +144,12 @@ export default function UploadClient() {
                 ))}
               </dl>
             </div>
+            <Link
+              href="/dashboard"
+              className="block w-full rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-700"
+            >
+              대시보드에서 전체 내역 확인
+            </Link>
           </div>
         )}
       </div>

@@ -38,5 +38,5 @@ export function parseExcel(buffer: Buffer): FinanceRow[] {
 
       return { date, account, amount, type: classifyAccount(account) } satisfies FinanceRow;
     })
-    .filter((row) => row.date !== '' && row.amount !== 0);
+    .filter((row) => row.date !== '' && row.amount !== 0 && !Number.isNaN(row.amount));
 }

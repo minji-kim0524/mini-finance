@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -27,10 +28,14 @@ export default function SignupPage() {
       return;
     }
 
+    setLoading(true);
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
     });
+
+    setLoading(false);
 
     if (error) {
       setError(error.message);
@@ -55,6 +60,7 @@ export default function SignupPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }}
               placeholder="example@email.com"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
             />
@@ -66,6 +72,7 @@ export default function SignupPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }}
               placeholder="비밀번호"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
             />
@@ -77,6 +84,7 @@ export default function SignupPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }}
               placeholder="비밀번호 확인"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
             />
@@ -88,9 +96,10 @@ export default function SignupPage() {
           <button
             type="button"
             onClick={handleSignup}
-            className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            disabled={loading}
+            className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >
-            회원가입
+            {loading ? "가입 중…" : "회원가입"}
           </button>
         </div>
 
