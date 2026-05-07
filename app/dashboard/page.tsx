@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { calcPLSummary } from "@/lib/aggregator";
+import { calcPLSummary, groupByMonth } from "@/lib/aggregator";
 import type { AccountType, FinanceRow, PLSummary } from "@/types/finance";
+import MonthlyChart from "./MonthlyChart";
 
 type SummaryLabel = {
   key: keyof PLSummary;
@@ -47,6 +48,7 @@ export default async function DashboardPage() {
   const financeRows = (rows ?? []) as FinanceRow[];
   const summary = financeRows.length > 0 ? calcPLSummary(financeRows) : null;
   const breakdown = groupByTypeAndAccount(financeRows);
+  const monthly = groupByMonth(financeRows);
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-12">
@@ -63,6 +65,8 @@ export default async function DashboardPage() {
             파일 업로드
           </Link>
         </div>
+
+        <MonthlyChart data={monthly} />
 
         {summary ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
