@@ -69,39 +69,56 @@ export default async function DashboardPage() {
         <MonthlyChart data={monthly} />
 
         {summary ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-base font-semibold text-slate-800">
-              손익 요약{" "}
-              <span className="text-sm font-normal text-slate-400">
-                ({financeRows.length}건)
-              </span>
-            </h2>
-            <dl className="space-y-2">
-              {SUMMARY_LABELS.map(({ key, label, type, separator }) => (
-                <div key={key}>
-                  {separator && <div className="my-3 border-t border-slate-100" />}
-                  <div className="flex justify-between text-sm">
-                    <dt className={type ? "text-slate-500" : "font-medium text-slate-700"}>
-                      {label}
-                    </dt>
-                    <dd className={`font-semibold ${summary[key] < 0 ? "text-red-500" : "text-slate-900"}`}>
-                      {formatKRW(summary[key])}
-                    </dd>
-                  </div>
-                  {type && breakdown.get(type) && (
-                    <div className="mt-1 space-y-0.5 border-l-2 border-slate-100 pl-3">
-                      {Array.from(breakdown.get(type)!.entries()).map(([account, amount]) => (
-                        <div key={account} className="flex justify-between text-xs">
-                          <span className="text-slate-400">{account}</span>
-                          <span className="text-slate-400">{formatKRW(amount)}</span>
-                        </div>
-                      ))}
+          <>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="mb-4 text-base font-semibold text-slate-800">
+                손익 요약{" "}
+                <span className="text-sm font-normal text-slate-400">
+                  ({financeRows.length}건)
+                </span>
+              </h2>
+              <dl className="space-y-2">
+                {SUMMARY_LABELS.map(({ key, label, type, separator }) => (
+                  <div key={key}>
+                    {separator && <div className="my-3 border-t border-slate-100" />}
+                    <div className="flex justify-between text-sm">
+                      <dt className={type ? "text-slate-500" : "font-medium text-slate-700"}>
+                        {label}
+                      </dt>
+                      <dd className={`font-semibold ${summary[key] < 0 ? "text-red-500" : "text-slate-900"}`}>
+                        {formatKRW(summary[key])}
+                      </dd>
                     </div>
-                  )}
+                    {type && breakdown.get(type) && (
+                      <div className="mt-1 space-y-0.5 border-l-2 border-slate-100 pl-3">
+                        {Array.from(breakdown.get(type)!.entries()).map(([account, amount]) => (
+                          <div key={account} className="flex justify-between text-xs">
+                            <span className="text-slate-400">{account}</span>
+                            <span className="text-slate-400">{formatKRW(amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            {breakdown.get("other") && (
+              <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+                <h2 className="mb-3 text-base font-semibold text-amber-800">미분류 항목</h2>
+                <p className="mb-3 text-xs text-amber-600">AI가 분류하지 못한 계정과목입니다. 직접 확인이 필요합니다.</p>
+                <div className="space-y-1">
+                  {Array.from(breakdown.get("other")!.entries()).map(([account, amount]) => (
+                    <div key={account} className="flex justify-between text-sm">
+                      <span className="text-amber-700">{account}</span>
+                      <span className="font-medium text-amber-800">{formatKRW(amount)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </dl>
-          </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
             <p className="text-sm font-medium text-slate-500">아직 데이터가 없습니다.</p>
