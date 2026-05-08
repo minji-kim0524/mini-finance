@@ -63,6 +63,12 @@ export default function LoginPage() {
             />
           </label>
 
+          <div className="flex justify-end">
+            <Link href="/auth/forgot-password" className="text-xs text-slate-500 hover:text-blue-600">
+              비밀번호를 잊으셨나요?
+            </Link>
+          </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button
