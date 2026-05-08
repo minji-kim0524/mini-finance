@@ -121,15 +121,20 @@ function CategoryRow({ label, colSpan = 3 }: { label: string; colSpan?: number }
 // ─── 대시보드 뷰 ────────────────────────────────────────────────
 
 const SUMMARY_LABELS: { key: keyof PLSummary; label: string; type?: AccountType; separator?: boolean }[] = [
-  { key: "totalRevenue",    label: "총 매출",    type: "revenue" },
-  { key: "totalCogs",       label: "매출원가",   type: "cogs" },
-  { key: "grossProfit",     label: "매출총이익", separator: true },
-  { key: "totalExpense",    label: "판관비",     type: "expense" },
-  { key: "operatingProfit", label: "영업이익",   separator: true },
+  { key: "totalRevenue",     label: "총 매출",     type: "revenue" },
+  { key: "totalCogs",        label: "매출원가",    type: "cogs" },
+  { key: "grossProfit",      label: "매출총이익",  separator: true },
+  { key: "totalExpense",     label: "판관비",      type: "expense" },
+  { key: "operatingProfit",  label: "영업이익",    separator: true },
+  { key: "totalNonOpIncome", label: "영업외수익",  type: "non_op_income" },
+  { key: "totalNonOpExpense",label: "영업외비용",  type: "non_op_expense" },
+  { key: "netIncome",        label: "당기순이익",  separator: true },
 ];
 
+const PL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense"];
+
 function DashboardView({ rows }: { rows: FinanceRow[] }) {
-  const plRows = rows.filter(r => r.type === "revenue" || r.type === "cogs" || r.type === "expense");
+  const plRows = rows.filter(r => PL_TYPES.includes(r.type));
   const summary = plRows.length > 0 ? calcPLSummary(plRows) : null;
 
   const breakdown = useMemo(() => {
@@ -204,35 +209,46 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
 // ─── 손익계산서 뷰 ───────────────────────────────────────────────
 
 function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
-  const revenue  = useMemo(() => groupByAccount(rows.filter(r => r.type === "revenue")),  [rows]);
-  const cogs     = useMemo(() => groupByAccount(rows.filter(r => r.type === "cogs")),     [rows]);
-  const expenses = useMemo(() => groupByAccount(rows.filter(r => r.type === "expense")),  [rows]);
+  const revenue    = useMemo(() => groupByAccount(rows.filter(r => r.type === "revenue")),        [rows]);
+  const cogs       = useMemo(() => groupByAccount(rows.filter(r => r.type === "cogs")),           [rows]);
+  const expenses   = useMemo(() => groupByAccount(rows.filter(r => r.type === "expense")),        [rows]);
+  const nonOpInc   = useMemo(() => groupByAccount(rows.filter(r => r.type === "non_op_income")),  [rows]);
+  const nonOpExp   = useMemo(() => groupByAccount(rows.filter(r => r.type === "non_op_expense")), [rows]);
 
-  const cRevenue  = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "revenue"))  : null, [compareRows]);
-  const cCogs     = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "cogs"))     : null, [compareRows]);
-  const cExpenses = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "expense"))  : null, [compareRows]);
+  const cRevenue  = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "revenue"))        : null, [compareRows]);
+  const cCogs     = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "cogs"))           : null, [compareRows]);
+  const cExpenses = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "expense"))        : null, [compareRows]);
+  const cNonOpInc = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "non_op_income"))  : null, [compareRows]);
+  const cNonOpExp = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "non_op_expense")) : null, [compareRows]);
 
-  const totalRevenue      = sum(revenue);
-  const totalCogs         = sum(cogs);
-  const grossProfit       = totalRevenue - totalCogs;
-  const totalExpense      = sum(expenses);
-  const operatingProfit   = grossProfit - totalExpense;
+  const totalRevenue    = sum(revenue);
+  const totalCogs       = sum(cogs);
+  const grossProfit     = totalRevenue - totalCogs;
+  const totalExpense    = sum(expenses);
+  const operatingProfit = grossProfit - totalExpense;
+  const totalNonOpInc   = sum(nonOpInc);
+  const totalNonOpExp   = sum(nonOpExp);
+  const netIncome       = operatingProfit + totalNonOpInc - totalNonOpExp;
 
   const cTotalRevenue    = cRevenue  ? sum(cRevenue)  : undefined;
   const cTotalCogs       = cCogs     ? sum(cCogs)     : undefined;
   const cGrossProfit     = cTotalRevenue !== undefined && cTotalCogs !== undefined ? cTotalRevenue - cTotalCogs : undefined;
-  const cTotalExpense    = cExpenses  ? sum(cExpenses)  : undefined;
+  const cTotalExpense    = cExpenses  ? sum(cExpenses) : undefined;
   const cOperatingProfit = cGrossProfit !== undefined && cTotalExpense !== undefined ? cGrossProfit - cTotalExpense : undefined;
+  const cTotalNonOpInc   = cNonOpInc ? sum(cNonOpInc) : undefined;
+  const cTotalNonOpExp   = cNonOpExp ? sum(cNonOpExp) : undefined;
+  const cNetIncome       = cOperatingProfit !== undefined && cTotalNonOpInc !== undefined && cTotalNonOpExp !== undefined
+    ? cOperatingProfit + cTotalNonOpInc - cTotalNonOpExp : undefined;
 
   const compare = !!compareRows;
-  const colSpan = compare ? 4 : 3;
 
-  // 전기 계정별 금액 조회 헬퍼
   function cAmt(map: Map<string, number> | null, account: string): number | undefined {
     return map ? (map.get(account) ?? 0) : undefined;
   }
 
-  if (revenue.size === 0 && cogs.size === 0 && expenses.size === 0) return <EmptyState />;
+  const hasNonOp = nonOpInc.size > 0 || nonOpExp.size > 0 || (cNonOpInc && cNonOpInc.size > 0) || (cNonOpExp && cNonOpExp.size > 0);
+
+  if (revenue.size === 0 && cogs.size === 0 && expenses.size === 0 && !hasNonOp) return <EmptyState />;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -274,7 +290,30 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
             )}
 
             {/* V. 영업이익 */}
-            <SubtotalRow label="V. 영업이익" value={operatingProfit} compareValue={cOperatingProfit} bold />
+            <SubtotalRow label="V. 영업이익" value={operatingProfit} compareValue={cOperatingProfit} bold={!hasNonOp} />
+
+            {/* VI. 영업외수익 */}
+            {(nonOpInc.size > 0 || (cNonOpInc && cNonOpInc.size > 0)) && (
+              <>
+                <SectionRow roman="VI." label="영업외수익" total={totalNonOpInc} compareTotal={cTotalNonOpInc} />
+                {Array.from(nonOpInc.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonOpInc, account)} />
+                ))}
+              </>
+            )}
+
+            {/* VII. 영업외비용 */}
+            {(nonOpExp.size > 0 || (cNonOpExp && cNonOpExp.size > 0)) && (
+              <>
+                <SectionRow roman="VII." label="영업외비용" total={totalNonOpExp} compareTotal={cTotalNonOpExp} />
+                {Array.from(nonOpExp.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonOpExp, account)} />
+                ))}
+              </>
+            )}
+
+            {/* VIII. 당기순이익 */}
+            {hasNonOp && <SubtotalRow label="VIII. 당기순이익" value={netIncome} compareValue={cNetIncome} bold />}
           </tbody>
         </table>
       </div>
@@ -435,26 +474,30 @@ function EmptyState() {
 // ─── 계정 분류 뷰 ────────────────────────────────────────────────
 
 const TYPE_LABELS: Record<AccountType, string> = {
-  revenue:   "매출",
-  cogs:      "매출원가",
-  expense:   "판관비",
-  asset:     "자산",
-  liability: "부채",
-  equity:    "자본",
-  other:     "미분류",
+  revenue:        "매출",
+  cogs:           "매출원가",
+  expense:        "판관비",
+  non_op_income:  "영업외수익",
+  non_op_expense: "영업외비용",
+  asset:          "자산",
+  liability:      "부채",
+  equity:         "자본",
+  other:          "미분류",
 };
 
 const TYPE_COLORS: Record<AccountType, string> = {
-  revenue:   "bg-blue-100 text-blue-700",
-  cogs:      "bg-orange-100 text-orange-700",
-  expense:   "bg-purple-100 text-purple-700",
-  asset:     "bg-emerald-100 text-emerald-700",
-  liability: "bg-rose-100 text-rose-700",
-  equity:    "bg-teal-100 text-teal-700",
-  other:     "bg-amber-100 text-amber-800",
+  revenue:        "bg-blue-100 text-blue-700",
+  cogs:           "bg-orange-100 text-orange-700",
+  expense:        "bg-purple-100 text-purple-700",
+  non_op_income:  "bg-sky-100 text-sky-700",
+  non_op_expense: "bg-pink-100 text-pink-700",
+  asset:          "bg-emerald-100 text-emerald-700",
+  liability:      "bg-rose-100 text-rose-700",
+  equity:         "bg-teal-100 text-teal-700",
+  other:          "bg-amber-100 text-amber-800",
 };
 
-const ALL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "asset", "liability", "equity", "other"];
+const ALL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense", "asset", "liability", "equity", "other"];
 
 function ClassifyView({
   rows,
@@ -569,12 +612,18 @@ function exportIncomeStatement(rows: FinanceRow[], filename: string) {
   const revenue  = groupByAccount(rows.filter(r => r.type === "revenue"));
   const cogs     = groupByAccount(rows.filter(r => r.type === "cogs"));
   const expenses = groupByAccount(rows.filter(r => r.type === "expense"));
+  const nonOpInc = groupByAccount(rows.filter(r => r.type === "non_op_income"));
+  const nonOpExp = groupByAccount(rows.filter(r => r.type === "non_op_expense"));
 
-  const totalRevenue      = sum(revenue);
-  const totalCogs         = sum(cogs);
-  const grossProfit       = totalRevenue - totalCogs;
-  const totalExpense      = sum(expenses);
-  const operatingProfit   = grossProfit - totalExpense;
+  const totalRevenue    = sum(revenue);
+  const totalCogs       = sum(cogs);
+  const grossProfit     = totalRevenue - totalCogs;
+  const totalExpense    = sum(expenses);
+  const operatingProfit = grossProfit - totalExpense;
+  const totalNonOpInc   = sum(nonOpInc);
+  const totalNonOpExp   = sum(nonOpExp);
+  const netIncome       = operatingProfit + totalNonOpInc - totalNonOpExp;
+  const hasNonOp        = nonOpInc.size > 0 || nonOpExp.size > 0;
 
   const data: Row[] = [
     ['계정과목', '금액', '합계'],
@@ -590,6 +639,15 @@ function exportIncomeStatement(rows: FinanceRow[], filename: string) {
       ...Array.from(expenses.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
     ] : []),
     ['V. 영업이익', null, operatingProfit],
+    ...(nonOpInc.size > 0 ? [
+      ['VI. 영업외수익', null, totalNonOpInc] as Row,
+      ...Array.from(nonOpInc.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(nonOpExp.size > 0 ? [
+      ['VII. 영업외비용', null, totalNonOpExp] as Row,
+      ...Array.from(nonOpExp.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(hasNonOp ? [['VIII. 당기순이익', null, netIncome] as Row] : []),
   ];
 
   const wb = XLSX.utils.book_new();

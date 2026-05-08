@@ -42,15 +42,20 @@ export function calcPLSummary(rows: FinanceRow[]): PLSummary {
   let totalRevenue = 0;
   let totalCogs = 0;
   let totalExpense = 0;
+  let totalNonOpIncome = 0;
+  let totalNonOpExpense = 0;
 
   for (const row of rows) {
     if (row.type === 'revenue') totalRevenue += row.amount;
     else if (row.type === 'cogs') totalCogs += row.amount;
     else if (row.type === 'expense') totalExpense += row.amount;
+    else if (row.type === 'non_op_income') totalNonOpIncome += row.amount;
+    else if (row.type === 'non_op_expense') totalNonOpExpense += row.amount;
   }
 
   const grossProfit = totalRevenue - totalCogs;
   const operatingProfit = grossProfit - totalExpense;
+  const netIncome = operatingProfit + totalNonOpIncome - totalNonOpExpense;
 
-  return { totalRevenue, totalCogs, grossProfit, totalExpense, operatingProfit };
+  return { totalRevenue, totalCogs, grossProfit, totalExpense, operatingProfit, totalNonOpIncome, totalNonOpExpense, netIncome };
 }

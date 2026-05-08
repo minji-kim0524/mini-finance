@@ -49,12 +49,27 @@ const EQUITY_KEYWORDS = [
   '기타포괄손익', '자기주식',
 ];
 
+const NON_OP_INCOME_KEYWORDS = [
+  '이자수익', '배당수익', '배당금수익',
+  '외환차익', '외화환산이익',
+  '유가증권처분이익', '투자자산처분이익', '유형자산처분이익',
+  '잡이익', '잡수입',
+];
+
+const NON_OP_EXPENSE_KEYWORDS = [
+  '이자비용', '금융비용', '사채이자',
+  '기부금',
+  '외환차손', '외화환산손실',
+  '유가증권처분손실', '투자자산처분손실', '유형자산처분손실',
+  '잡손실',
+];
+
 const REVENUE_KEYWORDS = [
   '매출액', '상품매출', '제품매출', '공사매출', '분양매출', '매출',
   '용역수익', '서비스수익', '임대수익', '임대료수익',
-  '이자수익', '배당수익', '로열티수익', '수강료수익', '수탁수익',
+  '로열티수익', '수강료수익', '수탁수익',
   '영업수익', '공사수익', '도급수익',
-  '잡이익', '잡수입', '수입',
+  '수입',
 ];
 
 const EXPENSE_KEYWORDS = [
@@ -84,6 +99,8 @@ export function classifyAccount(account: string): AccountType {
   if (ASSET_KEYWORDS.some((kw) => account.includes(kw))) return 'asset';
   if (LIABILITY_KEYWORDS.some((kw) => account.includes(kw))) return 'liability';
   if (EQUITY_KEYWORDS.some((kw) => account.includes(kw))) return 'equity';
+  if (NON_OP_INCOME_KEYWORDS.some((kw) => account.includes(kw))) return 'non_op_income';
+  if (NON_OP_EXPENSE_KEYWORDS.some((kw) => account.includes(kw))) return 'non_op_expense';
   if (REVENUE_KEYWORDS.some((kw) => account.includes(kw))) return 'revenue';
   if (EXPENSE_KEYWORDS.some((kw) => account.includes(kw))) return 'expense';
   return 'other';

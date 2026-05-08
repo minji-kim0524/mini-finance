@@ -1,4 +1,4 @@
-export type AccountType = 'revenue' | 'cogs' | 'expense' | 'asset' | 'liability' | 'equity' | 'other';
+export type AccountType = 'revenue' | 'cogs' | 'expense' | 'non_op_income' | 'non_op_expense' | 'asset' | 'liability' | 'equity' | 'other';
 
 export interface FinanceRow {
   date: string;
@@ -20,4 +20,7 @@ export interface PLSummary {
   grossProfit: number;
   totalExpense: number;
   operatingProfit: number;
+  totalNonOpIncome: number;
+  totalNonOpExpense: number;
+  netIncome: number;
 }
