@@ -64,7 +64,7 @@ export default async function ReportDashboardPage({
           </div>
         </div>
 
-        <ReportViewer rows={financeRows} />
+        <ReportViewer rows={financeRows} reportName={report.name} reportDate={uploadDate} />
       </div>
     </div>
   );
