@@ -464,6 +464,7 @@ function ClassifyView({
   onReclassify: (account: string, type: AccountType) => Promise<void>;
 }) {
   const [pending, setPending] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // 계정과목 단위로 집계 (같은 계정은 하나로)
   const accounts = useMemo(() => {
@@ -486,8 +487,11 @@ function ClassifyView({
 
   async function handleChange(account: string, newType: AccountType) {
     setPending(account);
+    setErrorMsg(null);
     try {
       await onReclassify(account, newType);
+    } catch {
+      setErrorMsg("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setPending(null);
     }
@@ -508,6 +512,11 @@ function ClassifyView({
           )}
         </p>
       </div>
+      {errorMsg && (
+        <div className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs text-red-600">
+          {errorMsg}
+        </div>
+      )}
       <div className="divide-y divide-slate-50">
         {accounts.map(([account, { type, total }]) => (
           <div
@@ -666,13 +675,27 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
   );
 
   const handleReclassify = useCallback(async (account: string, newType: AccountType) => {
+    // 낙관적 업데이트: 즉시 UI 반영
+    let prevType: AccountType | null = null;
+    setRows(prev => {
+      const found = prev.find(r => r.account === account);
+      if (found) prevType = found.type;
+      return prev.map(r => r.account === account ? { ...r, type: newType } : r);
+    });
+
     const res = await fetch(`/api/reports/${params.reportId}/reclassify`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ account, type: newType }),
     });
-    if (!res.ok) return;
-    setRows(prev => prev.map(r => r.account === account ? { ...r, type: newType } : r));
+
+    if (!res.ok) {
+      // 실패 시 롤백
+      if (prevType !== null) {
+        setRows(prev => prev.map(r => r.account === account ? { ...r, type: prevType! } : r));
+      }
+      throw new Error("저장 실패");
+    }
   }, [params.reportId]);
 
   const handleCompareChange = useCallback(async (id: string) => {
