@@ -24,14 +24,23 @@ export default async function ReportDashboardPage({
 
   if (!report) redirect("/dashboard");
 
-  const { data: rows } = await supabase
-    .from("finance_rows")
-    .select("date, account, amount, type")
-    .eq("report_id", reportId)
-    .eq("user_id", user.id)
-    .order("date", { ascending: true });
+  const [{ data: rows }, { data: allReports }] = await Promise.all([
+    supabase
+      .from("finance_rows")
+      .select("date, account, amount, type")
+      .eq("report_id", reportId)
+      .eq("user_id", user.id)
+      .order("date", { ascending: true }),
+    supabase
+      .from("reports")
+      .select("id, name, created_at")
+      .eq("user_id", user.id)
+      .neq("id", reportId)
+      .order("created_at", { ascending: false }),
+  ]);
 
   const financeRows = (rows ?? []) as FinanceRow[];
+  const otherReports = (allReports ?? []) as { id: string; name: string; created_at: string }[];
 
   const uploadDate = new Date(report.created_at).toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -64,7 +73,7 @@ export default async function ReportDashboardPage({
           </div>
         </div>
 
-        <ReportViewer rows={financeRows} reportName={report.name} />
+        <ReportViewer rows={financeRows} reportName={report.name} otherReports={otherReports} />
       </div>
     </div>
   );

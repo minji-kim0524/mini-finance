@@ -35,62 +35,83 @@ function sum(map: Map<string, number>): number {
 
 // ─── 공통 테이블 행 컴포넌트 ─────────────────────────────────────
 
-function TableHeader() {
+function TableHeader({ compare }: { compare?: boolean }) {
   return (
     <thead>
       <tr className="border-b-2 border-slate-200">
         <th className="py-2.5 pl-5 text-left text-xs font-semibold text-slate-500">계정과목</th>
         <th className="py-2.5 pr-3 text-right text-xs font-semibold text-slate-500">금액</th>
-        <th className="py-2.5 pr-5 text-right text-xs font-semibold text-slate-500">합계</th>
+        <th className={`py-2.5 text-right text-xs font-semibold text-slate-500 ${compare ? "pr-3" : "pr-5"}`}>
+          {compare ? "당기" : "합계"}
+        </th>
+        {compare && (
+          <th className="py-2.5 pr-5 text-right text-xs font-semibold text-blue-400">전기</th>
+        )}
       </tr>
     </thead>
   );
 }
 
 // 섹션 헤더 행 (I. 매출액 등)
-function SectionRow({ roman, label, total, highlight }: { roman: string; label: string; total: number; highlight?: boolean }) {
+function SectionRow({ roman, label, total, compareTotal, highlight }: { roman: string; label: string; total: number; compareTotal?: number; highlight?: boolean }) {
+  const hasCompare = compareTotal !== undefined;
   return (
     <tr className={highlight ? "border-t-2 border-slate-300 bg-slate-50" : "border-t border-slate-100 bg-slate-50"}>
       <td className={`py-2.5 pl-5 text-sm ${highlight ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
         <span className="mr-1.5 text-xs font-normal text-slate-400">{roman}</span>{label}
       </td>
       <td className="py-2.5 pr-3" />
-      <td className={`py-2.5 pr-5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
+      <td className={`py-2.5 text-right text-sm ${hasCompare ? "pr-3" : "pr-5"} ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
         {fmtNum(total)}
       </td>
+      {hasCompare && (
+        <td className={`py-2.5 pr-5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${compareTotal < 0 ? "text-red-300" : "text-blue-300"}`}>
+          {fmtNum(compareTotal)}
+        </td>
+      )}
     </tr>
   );
 }
 
 // 소계 행 (매출총이익, 영업이익 등)
-function SubtotalRow({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+function SubtotalRow({ label, value, compareValue, bold }: { label: string; value: number; compareValue?: number; bold?: boolean }) {
+  const hasCompare = compareValue !== undefined;
   return (
     <tr className="border-t-2 border-slate-300 bg-slate-50">
       <td className={`py-2.5 pl-5 text-sm ${bold ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{label}</td>
       <td className="py-2.5 pr-3" />
-      <td className={`py-2.5 pr-5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
+      <td className={`py-2.5 text-right text-sm ${hasCompare ? "pr-3" : "pr-5"} ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
         {fmtNum(value)}
       </td>
+      {hasCompare && (
+        <td className={`py-2.5 pr-5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${compareValue < 0 ? "text-red-300" : "text-blue-300"}`}>
+          {fmtNum(compareValue)}
+        </td>
+      )}
     </tr>
   );
 }
 
 // 세부 계정 행 (들여쓰기)
-function AccountRow({ account, amount, indent = 1 }: { account: string; amount: number; indent?: number }) {
+function AccountRow({ account, amount, compareAmount, indent = 1 }: { account: string; amount: number; compareAmount?: number; indent?: number }) {
+  const hasCompare = compareAmount !== undefined;
   return (
     <tr className="border-t border-slate-50 hover:bg-slate-50/60">
       <td className={`py-1.5 text-xs text-slate-500 ${indent === 2 ? "pl-14" : "pl-9"}`}>{account}</td>
-      <td className="py-1.5 pr-3 text-right text-xs text-slate-500">{fmtNum(amount)}</td>
-      <td className="py-1.5 pr-5" />
+      <td className={`py-1.5 text-right text-xs text-slate-500 ${hasCompare ? "pr-3" : "pr-3"}`}>{fmtNum(amount)}</td>
+      <td className={`py-1.5 ${hasCompare ? "pr-3" : "pr-5"}`} />
+      {hasCompare && (
+        <td className="py-1.5 pr-5 text-right text-xs text-blue-300">{fmtNum(compareAmount)}</td>
+      )}
     </tr>
   );
 }
 
 // 섹션 제목 행 (자산, 부채, 자본)
-function CategoryRow({ label }: { label: string }) {
+function CategoryRow({ label, colSpan = 3 }: { label: string; colSpan?: number }) {
   return (
     <tr className="bg-slate-800">
-      <td colSpan={3} className="px-5 py-2 text-xs font-bold tracking-widest text-slate-100">
+      <td colSpan={colSpan} className="px-5 py-2 text-xs font-bold tracking-widest text-slate-100">
         {label}
       </td>
     </tr>
@@ -182,16 +203,34 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
 
 // ─── 손익계산서 뷰 ───────────────────────────────────────────────
 
-function IncomeStatementView({ rows }: { rows: FinanceRow[] }) {
+function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
   const revenue  = useMemo(() => groupByAccount(rows.filter(r => r.type === "revenue")),  [rows]);
   const cogs     = useMemo(() => groupByAccount(rows.filter(r => r.type === "cogs")),     [rows]);
   const expenses = useMemo(() => groupByAccount(rows.filter(r => r.type === "expense")),  [rows]);
+
+  const cRevenue  = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "revenue"))  : null, [compareRows]);
+  const cCogs     = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "cogs"))     : null, [compareRows]);
+  const cExpenses = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "expense"))  : null, [compareRows]);
 
   const totalRevenue      = sum(revenue);
   const totalCogs         = sum(cogs);
   const grossProfit       = totalRevenue - totalCogs;
   const totalExpense      = sum(expenses);
   const operatingProfit   = grossProfit - totalExpense;
+
+  const cTotalRevenue    = cRevenue  ? sum(cRevenue)  : undefined;
+  const cTotalCogs       = cCogs     ? sum(cCogs)     : undefined;
+  const cGrossProfit     = cTotalRevenue !== undefined && cTotalCogs !== undefined ? cTotalRevenue - cTotalCogs : undefined;
+  const cTotalExpense    = cExpenses  ? sum(cExpenses)  : undefined;
+  const cOperatingProfit = cGrossProfit !== undefined && cTotalExpense !== undefined ? cGrossProfit - cTotalExpense : undefined;
+
+  const compare = !!compareRows;
+  const colSpan = compare ? 4 : 3;
+
+  // 전기 계정별 금액 조회 헬퍼
+  function cAmt(map: Map<string, number> | null, account: string): number | undefined {
+    return map ? (map.get(account) ?? 0) : undefined;
+  }
 
   if (revenue.size === 0 && cogs.size === 0 && expenses.size === 0) return <EmptyState />;
 
@@ -203,39 +242,39 @@ function IncomeStatementView({ rows }: { rows: FinanceRow[] }) {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[320px]">
-          <TableHeader />
+          <TableHeader compare={compare} />
           <tbody>
             {/* I. 매출액 */}
-            <SectionRow roman="I." label="매출액" total={totalRevenue} />
+            <SectionRow roman="I." label="매출액" total={totalRevenue} compareTotal={cTotalRevenue} />
             {Array.from(revenue.entries()).map(([account, amount]) => (
-              <AccountRow key={account} account={account} amount={amount} />
+              <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cRevenue, account)} />
             ))}
 
             {/* II. 매출원가 */}
-            {cogs.size > 0 && (
+            {(cogs.size > 0 || (cCogs && cCogs.size > 0)) && (
               <>
-                <SectionRow roman="II." label="매출원가" total={totalCogs} />
+                <SectionRow roman="II." label="매출원가" total={totalCogs} compareTotal={cTotalCogs} />
                 {Array.from(cogs.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCogs, account)} />
                 ))}
               </>
             )}
 
             {/* III. 매출총이익 */}
-            <SubtotalRow label="III. 매출총이익" value={grossProfit} />
+            <SubtotalRow label="III. 매출총이익" value={grossProfit} compareValue={cGrossProfit} />
 
             {/* IV. 판매비와관리비 */}
-            {expenses.size > 0 && (
+            {(expenses.size > 0 || (cExpenses && cExpenses.size > 0)) && (
               <>
-                <SectionRow roman="IV." label="판매비와관리비" total={totalExpense} />
+                <SectionRow roman="IV." label="판매비와관리비" total={totalExpense} compareTotal={cTotalExpense} />
                 {Array.from(expenses.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cExpenses, account)} />
                 ))}
               </>
             )}
 
             {/* V. 영업이익 */}
-            <SubtotalRow label="V. 영업이익" value={operatingProfit} bold />
+            <SubtotalRow label="V. 영업이익" value={operatingProfit} compareValue={cOperatingProfit} bold />
           </tbody>
         </table>
       </div>
@@ -253,7 +292,7 @@ function subClassify(account: string, type: 'asset' | 'liability'): 'current' | 
   return kws.some(kw => account.includes(kw)) ? 'current' : 'non_current';
 }
 
-function BalanceSheetView({ rows }: { rows: FinanceRow[] }) {
+function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
   const assets      = rows.filter(r => r.type === "asset");
   const liabilities = rows.filter(r => r.type === "liability");
   const equity      = rows.filter(r => r.type === "equity");
@@ -275,6 +314,33 @@ function BalanceSheetView({ rows }: { rows: FinanceRow[] }) {
   const totalEquity           = sum(equityAccounts);
   const totalLiabAndEquity    = totalLiabilities + totalEquity;
 
+  // 전기 데이터
+  const cAssets      = compareRows ? compareRows.filter(r => r.type === "asset")      : null;
+  const cLiabilities = compareRows ? compareRows.filter(r => r.type === "liability")  : null;
+  const cEquity      = compareRows ? compareRows.filter(r => r.type === "equity")     : null;
+
+  const cCurrentAssets    = cAssets      ? groupByAccount(cAssets.filter(r => subClassify(r.account, 'asset') === 'current'))          : null;
+  const cNonCurrentAssets = cAssets      ? groupByAccount(cAssets.filter(r => subClassify(r.account, 'asset') === 'non_current'))      : null;
+  const cCurrentLiab      = cLiabilities ? groupByAccount(cLiabilities.filter(r => subClassify(r.account, 'liability') === 'current')) : null;
+  const cNonCurrentLiab   = cLiabilities ? groupByAccount(cLiabilities.filter(r => subClassify(r.account, 'liability') === 'non_current')) : null;
+  const cEquityAccounts   = cEquity      ? groupByAccount(cEquity)                                                                      : null;
+
+  const cTotalCurrentAssets    = cCurrentAssets    ? sum(cCurrentAssets)    : undefined;
+  const cTotalNonCurrentAssets = cNonCurrentAssets ? sum(cNonCurrentAssets) : undefined;
+  const cTotalAssets           = cTotalCurrentAssets !== undefined && cTotalNonCurrentAssets !== undefined ? cTotalCurrentAssets + cTotalNonCurrentAssets : undefined;
+  const cTotalCurrentLiab      = cCurrentLiab      ? sum(cCurrentLiab)      : undefined;
+  const cTotalNonCurrentLiab   = cNonCurrentLiab   ? sum(cNonCurrentLiab)   : undefined;
+  const cTotalLiabilities      = cTotalCurrentLiab !== undefined && cTotalNonCurrentLiab !== undefined ? cTotalCurrentLiab + cTotalNonCurrentLiab : undefined;
+  const cTotalEquity           = cEquityAccounts   ? sum(cEquityAccounts)   : undefined;
+  const cTotalLiabAndEquity    = cTotalLiabilities !== undefined && cTotalEquity !== undefined ? cTotalLiabilities + cTotalEquity : undefined;
+
+  const compare = !!compareRows;
+  const colSpan = compare ? 4 : 3;
+
+  function cAmt(map: Map<string, number> | null, account: string): number | undefined {
+    return map ? (map.get(account) ?? 0) : undefined;
+  }
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3.5 text-center">
@@ -283,68 +349,71 @@ function BalanceSheetView({ rows }: { rows: FinanceRow[] }) {
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[320px]">
-          <TableHeader />
+          <TableHeader compare={compare} />
           <tbody>
             {/* ── 자산 ── */}
-            <CategoryRow label="자  산" />
+            <CategoryRow label="자  산" colSpan={colSpan} />
 
             {currentAssets.size > 0 && (
               <>
-                <SectionRow roman="I." label="유동자산" total={totalCurrentAssets} />
+                <SectionRow roman="I." label="유동자산" total={totalCurrentAssets} compareTotal={cTotalCurrentAssets} />
                 {Array.from(currentAssets.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCurrentAssets, account)} />
                 ))}
               </>
             )}
 
             {nonCurrentAssets.size > 0 && (
               <>
-                <SectionRow roman="II." label="비유동자산" total={totalNonCurrentAssets} />
+                <SectionRow roman="II." label="비유동자산" total={totalNonCurrentAssets} compareTotal={cTotalNonCurrentAssets} />
                 {Array.from(nonCurrentAssets.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonCurrentAssets, account)} />
                 ))}
               </>
             )}
 
-            <SubtotalRow label="자산 총계" value={totalAssets} bold />
+            <SubtotalRow label="자산 총계" value={totalAssets} compareValue={cTotalAssets} bold />
 
             {/* ── 부채 ── */}
-            <CategoryRow label="부  채" />
+            <CategoryRow label="부  채" colSpan={colSpan} />
 
             {currentLiab.size > 0 && (
               <>
-                <SectionRow roman="I." label="유동부채" total={totalCurrentLiab} />
+                <SectionRow roman="I." label="유동부채" total={totalCurrentLiab} compareTotal={cTotalCurrentLiab} />
                 {Array.from(currentLiab.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCurrentLiab, account)} />
                 ))}
               </>
             )}
 
             {nonCurrentLiab.size > 0 && (
               <>
-                <SectionRow roman="II." label="비유동부채" total={totalNonCurrentLiab} />
+                <SectionRow roman="II." label="비유동부채" total={totalNonCurrentLiab} compareTotal={cTotalNonCurrentLiab} />
                 {Array.from(nonCurrentLiab.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonCurrentLiab, account)} />
                 ))}
               </>
             )}
 
-            <SubtotalRow label="부채 총계" value={totalLiabilities} bold />
+            <SubtotalRow label="부채 총계" value={totalLiabilities} compareValue={cTotalLiabilities} bold />
 
             {/* ── 자본 ── */}
-            <CategoryRow label="자  본" />
+            <CategoryRow label="자  본" colSpan={colSpan} />
 
             {Array.from(equityAccounts.entries()).map(([account, amount]) => (
-              <AccountRow key={account} account={account} amount={amount} />
+              <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cEquityAccounts, account)} />
             ))}
 
-            <SubtotalRow label="자본 총계" value={totalEquity} bold />
+            <SubtotalRow label="자본 총계" value={totalEquity} compareValue={cTotalEquity} bold />
 
             {/* 부채 및 자본 총계 */}
             <tr className="border-t-2 border-slate-800 bg-slate-900">
               <td className="py-3 pl-5 text-sm font-bold text-white">부채 및 자본 총계</td>
               <td className="py-3 pr-3" />
-              <td className="py-3 pr-5 text-right text-sm font-bold text-white">{fmtNum(totalLiabAndEquity)}</td>
+              <td className={`py-3 text-right text-sm font-bold text-white ${compare ? "pr-3" : "pr-5"}`}>{fmtNum(totalLiabAndEquity)}</td>
+              {compare && (
+                <td className="py-3 pr-5 text-right text-sm font-bold text-blue-300">{cTotalLiabAndEquity !== undefined ? fmtNum(cTotalLiabAndEquity) : "-"}</td>
+              )}
             </tr>
           </tbody>
         </table>
@@ -579,11 +648,15 @@ function exportBalanceSheet(rows: FinanceRow[], filename: string) {
 interface ReportViewerProps {
   rows: FinanceRow[];
   reportName: string;
+  otherReports?: { id: string; name: string; created_at: string }[];
 }
 
-export default function ReportViewer({ rows: initialRows, reportName }: ReportViewerProps) {
+export default function ReportViewer({ rows: initialRows, reportName, otherReports = [] }: ReportViewerProps) {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [rows, setRows] = useState<FinanceRow[]>(initialRows);
+  const [compareId, setCompareId] = useState<string>("");
+  const [compareRows, setCompareRows] = useState<FinanceRow[] | null>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const params = useParams<{ reportId: string }>();
 
@@ -601,6 +674,19 @@ export default function ReportViewer({ rows: initialRows, reportName }: ReportVi
     if (!res.ok) return;
     setRows(prev => prev.map(r => r.account === account ? { ...r, type: newType } : r));
   }, [params.reportId]);
+
+  const handleCompareChange = useCallback(async (id: string) => {
+    setCompareId(id);
+    if (!id) { setCompareRows(null); return; }
+    setCompareLoading(true);
+    try {
+      const res = await fetch(`/api/reports/${id}/rows`);
+      const json = await res.json() as { rows: FinanceRow[] };
+      setCompareRows(json.rows);
+    } finally {
+      setCompareLoading(false);
+    }
+  }, []);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -683,13 +769,37 @@ export default function ReportViewer({ rows: initialRows, reportName }: ReportVi
         )}
       </div>
 
+      {/* 전기 비교 선택 */}
+      {isStatementTab && otherReports.length > 0 && (
+        <div className="flex items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-2.5">
+          <span className="shrink-0 text-xs font-semibold text-blue-600">전기 비교</span>
+          <select
+            value={compareId}
+            onChange={(e) => handleCompareChange(e.target.value)}
+            disabled={compareLoading}
+            className="min-w-0 flex-1 rounded-xl border border-blue-200 bg-white py-1.5 pl-3 pr-7 text-xs text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
+          >
+            <option value="">비교 안 함</option>
+            {otherReports.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+          {compareLoading && (
+            <svg className="h-4 w-4 shrink-0 animate-spin text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          )}
+        </div>
+      )}
+
       {/* 대시보드 탭 */}
       {tab === "dashboard" && <DashboardView rows={rows} />}
 
       {/* 재무제표 탭 (인쇄 대상) */}
       <div ref={printRef}>
-        {tab === "income"  && <IncomeStatementView rows={rows} />}
-        {tab === "balance" && <BalanceSheetView rows={rows} />}
+        {tab === "income"  && <IncomeStatementView rows={rows} compareRows={compareRows ?? undefined} />}
+        {tab === "balance" && <BalanceSheetView rows={rows} compareRows={compareRows ?? undefined} />}
       </div>
 
       {/* 계정 분류 탭 */}
