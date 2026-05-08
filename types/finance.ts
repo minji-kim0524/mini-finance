@@ -1,4 +1,4 @@
-export type AccountType = 'revenue' | 'cogs' | 'expense' | 'other';
+export type AccountType = 'revenue' | 'cogs' | 'expense' | 'asset' | 'liability' | 'equity' | 'other';
 
 export interface FinanceRow {
   date: string;
