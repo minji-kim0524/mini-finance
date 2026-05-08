@@ -36,9 +36,9 @@ function TableHeader() {
   return (
     <thead>
       <tr className="border-b-2 border-slate-200">
-        <th className="py-2.5 text-left text-xs font-semibold text-slate-500">계정과목</th>
+        <th className="py-2.5 pl-5 text-left text-xs font-semibold text-slate-500">계정과목</th>
         <th className="py-2.5 pr-3 text-right text-xs font-semibold text-slate-500">금액</th>
-        <th className="py-2.5 text-right text-xs font-semibold text-slate-500">합계</th>
+        <th className="py-2.5 pr-5 text-right text-xs font-semibold text-slate-500">합계</th>
       </tr>
     </thead>
   );
@@ -48,11 +48,11 @@ function TableHeader() {
 function SectionRow({ roman, label, total, highlight }: { roman: string; label: string; total: number; highlight?: boolean }) {
   return (
     <tr className={highlight ? "border-t-2 border-slate-300 bg-slate-50" : "border-t border-slate-100 bg-slate-50"}>
-      <td className={`py-2.5 text-sm ${highlight ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
+      <td className={`py-2.5 pl-5 text-sm ${highlight ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
         <span className="mr-1.5 text-xs font-normal text-slate-400">{roman}</span>{label}
       </td>
       <td className="py-2.5 pr-3" />
-      <td className={`py-2.5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
+      <td className={`py-2.5 pr-5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
         {fmtNum(total)}
       </td>
     </tr>
@@ -63,9 +63,9 @@ function SectionRow({ roman, label, total, highlight }: { roman: string; label: 
 function SubtotalRow({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
   return (
     <tr className="border-t-2 border-slate-300 bg-slate-50">
-      <td className={`py-2.5 text-sm ${bold ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{label}</td>
+      <td className={`py-2.5 pl-5 text-sm ${bold ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{label}</td>
       <td className="py-2.5 pr-3" />
-      <td className={`py-2.5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
+      <td className={`py-2.5 pr-5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
         {fmtNum(value)}
       </td>
     </tr>
@@ -76,9 +76,9 @@ function SubtotalRow({ label, value, bold }: { label: string; value: number; bol
 function AccountRow({ account, amount, indent = 1 }: { account: string; amount: number; indent?: number }) {
   return (
     <tr className="border-t border-slate-50 hover:bg-slate-50/60">
-      <td className={`py-1.5 text-xs text-slate-500 ${indent === 2 ? "pl-10" : "pl-5"}`}>{account}</td>
+      <td className={`py-1.5 text-xs text-slate-500 ${indent === 2 ? "pl-14" : "pl-9"}`}>{account}</td>
       <td className="py-1.5 pr-3 text-right text-xs text-slate-500">{fmtNum(amount)}</td>
-      <td className="py-1.5" />
+      <td className="py-1.5 pr-5" />
     </tr>
   );
 }
@@ -87,7 +87,7 @@ function AccountRow({ account, amount, indent = 1 }: { account: string; amount: 
 function CategoryRow({ label }: { label: string }) {
   return (
     <tr className="bg-slate-800">
-      <td colSpan={3} className="px-1 py-2 text-xs font-bold tracking-widest text-slate-100">
+      <td colSpan={3} className="px-5 py-2 text-xs font-bold tracking-widest text-slate-100">
         {label}
       </td>
     </tr>
@@ -339,9 +339,9 @@ function BalanceSheetView({ rows }: { rows: FinanceRow[] }) {
 
             {/* 부채 및 자본 총계 */}
             <tr className="border-t-2 border-slate-800 bg-slate-900">
-              <td className="py-3 pl-1 text-sm font-bold text-white">부채 및 자본 총계</td>
+              <td className="py-3 pl-5 text-sm font-bold text-white">부채 및 자본 총계</td>
               <td className="py-3 pr-3" />
-              <td className="py-3 text-right text-sm font-bold text-white">{fmtNum(totalLiabAndEquity)}</td>
+              <td className="py-3 pr-5 text-right text-sm font-bold text-white">{fmtNum(totalLiabAndEquity)}</td>
             </tr>
           </tbody>
         </table>
