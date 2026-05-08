@@ -438,12 +438,6 @@ export default function ReportViewer({ rows, reportName, reportDate }: ReportVie
 
       {/* 재무제표 탭 (인쇄 대상) */}
       <div ref={printRef}>
-        {/* 인쇄 시에만 표시되는 헤더 */}
-        <div className="mb-5 hidden border-b border-slate-200 pb-4 print:block">
-          <p className="text-base font-bold text-slate-900">{reportName}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{reportDate}</p>
-        </div>
-
         {tab === "income"  && <IncomeStatementView rows={rows} />}
         {tab === "balance" && <BalanceSheetView rows={rows} />}
       </div>
