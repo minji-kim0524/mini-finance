@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
+import * as XLSX from "xlsx";
 import type { PLSummary } from "@/types/finance";
 import UserMenu from "@/components/UserMenu";
 
@@ -129,6 +130,8 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
           {state.status === "loading" ? "분석 중…" : "업로드 및 분석"}
         </button>
 
+        <FormatGuide />
+
         {/* Error */}
         {state.status === "error" && (
           <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -167,6 +170,129 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function downloadSample() {
+  const data = [
+    ["날짜", "계정과목", "금액"],
+    ["2024-01-05", "상품매출", 8000000],
+    ["2024-01-10", "매출원가", 3500000],
+    ["2024-01-15", "급여", 2000000],
+    ["2024-01-20", "광고선전비", 500000],
+    ["2024-01-25", "임차료", 800000],
+    ["2024-02-05", "상품매출", 9500000],
+    ["2024-02-10", "매출원가", 4000000],
+    ["2024-02-15", "급여", 2000000],
+    ["2024-02-20", "복리후생비", 300000],
+    ["2024-02-28", "통신비", 150000],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws["!cols"] = [{ wch: 14 }, { wch: 18 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "거래내역");
+  XLSX.writeFile(wb, "거래내역_샘플.xlsx");
+}
+
+const SAMPLE_ROWS = [
+  { date: "2024-01-05", account: "상품매출", amount: "8,000,000" },
+  { date: "2024-01-10", account: "매출원가", amount: "3,500,000" },
+  { date: "2024-01-15", account: "급여", amount: "2,000,000" },
+  { date: "2024-01-20", account: "광고선전비", amount: "500,000" },
+  { date: "...", account: "...", amount: "..." },
+];
+
+function FormatGuide() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-700">업로드 형식 가이드</span>
+          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500">엑셀 형식 안내</span>
+        </div>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className={`h-4 w-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-slate-600">필수 컬럼 (헤더명 정확히 입력)</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { col: "날짜", desc: "YYYY-MM-DD 형식" },
+                { col: "계정과목", desc: "거래 항목명" },
+                { col: "금액", desc: "숫자 (원 단위)" },
+              ].map(({ col, desc }) => (
+                <div key={col} className="rounded-xl border border-slate-200 px-3 py-2">
+                  <span className="font-mono text-sm font-semibold text-slate-800">{col}</span>
+                  <span className="ml-2 text-xs text-slate-400">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-slate-600">예시</p>
+            <div className="overflow-x-auto rounded-xl border border-slate-100">
+              <table className="w-full text-xs">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600">날짜</th>
+                    <th className="px-3 py-2 text-left font-semibold text-slate-600">계정과목</th>
+                    <th className="px-3 py-2 text-right font-semibold text-slate-600">금액</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {SAMPLE_ROWS.map((row, i) => (
+                    <tr key={i} className="text-slate-500">
+                      <td className="px-3 py-1.5">{row.date}</td>
+                      <td className="px-3 py-1.5">{row.account}</td>
+                      <td className="px-3 py-1.5 text-right">{row.amount}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs font-semibold text-slate-600">계정과목 자동 분류 예시</p>
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: "매출 → 매출액", color: "bg-blue-50 text-blue-700" },
+                { label: "매출원가 → 매출원가", color: "bg-orange-50 text-orange-700" },
+                { label: "급여/광고비/임차료 → 판관비", color: "bg-purple-50 text-purple-700" },
+                { label: "현금/보통예금 → 자산", color: "bg-emerald-50 text-emerald-700" },
+              ].map(({ label, color }) => (
+                <span key={label} className={`rounded-full px-2.5 py-1 text-xs font-medium ${color}`}>{label}</span>
+              ))}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={downloadSample}
+            className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            샘플 파일 다운로드 (.xlsx)
+          </button>
+        </div>
+      )}
     </div>
   );
 }
