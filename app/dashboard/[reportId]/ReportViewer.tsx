@@ -366,10 +366,9 @@ function EmptyState() {
 interface ReportViewerProps {
   rows: FinanceRow[];
   reportName: string;
-  reportDate: string;
 }
 
-export default function ReportViewer({ rows, reportName, reportDate }: ReportViewerProps) {
+export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
   const [tab, setTab] = useState<Tab>("dashboard");
   const printRef = useRef<HTMLDivElement>(null);
 
