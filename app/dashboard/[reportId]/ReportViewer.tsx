@@ -490,8 +490,8 @@ function ClassifyView({
     setErrorMsg(null);
     try {
       await onReclassify(account, newType);
-    } catch (e) {
-      setErrorMsg(`저장 실패: ${e instanceof Error ? e.message : String(e)}`);
+    } catch {
+      setErrorMsg("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
     } finally {
       setPending(null);
     }
@@ -690,12 +690,11 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     });
 
     if (!res.ok) {
-      const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
       // 실패 시 롤백
       if (prevType !== null) {
         setRows(prev => prev.map(r => r.account === account ? { ...r, type: prevType! } : r));
       }
-      throw new Error(body.error ?? `HTTP ${res.status}`);
+      throw new Error("저장 실패");
     }
   }, [params.reportId]);
 
