@@ -27,19 +27,39 @@ function formatDate(iso: string) {
 
 export default function DashboardClient({ initialReports }: { initialReports: Report[] }) {
   const [reports, setReports] = useState<Report[]>(initialReports);
-  const [confirmId, setConfirmId] = useState<string | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirm, setConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  async function handleDelete(id: string) {
-    setDeletingId(id);
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (selected.size === reports.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(reports.map((r) => r.id)));
+    }
+  }
+
+  async function handleDeleteSelected() {
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/reports/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setReports((prev) => prev.filter((r) => r.id !== id));
-      }
+      await Promise.all(
+        Array.from(selected).map((id) =>
+          fetch(`/api/reports/${id}`, { method: "DELETE" })
+        )
+      );
+      setReports((prev) => prev.filter((r) => !selected.has(r.id)));
+      setSelected(new Set());
+      setConfirm(false);
     } finally {
-      setDeletingId(null);
-      setConfirmId(null);
+      setDeleting(false);
     }
   }
 
@@ -58,40 +78,82 @@ export default function DashboardClient({ initialReports }: { initialReports: Re
     );
   }
 
+  const allSelected = selected.size === reports.length;
+  const someSelected = selected.size > 0;
+
   return (
-    <ul className="space-y-3">
-      {reports.map((report) => (
-        <li key={report.id}>
-          {confirmId === report.id ? (
-            // 삭제 확인 상태
-            <div className="flex items-center justify-between rounded-3xl border border-red-200 bg-red-50 px-5 py-4">
-              <p className="text-sm font-medium text-red-700">
-                <span className="font-semibold">"{report.name}"</span>을 삭제할까요?
-              </p>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmId(null)}
-                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-                >
-                  취소
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(report.id)}
-                  disabled={deletingId === report.id}
-                  className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
-                >
-                  {deletingId === report.id ? "삭제 중…" : "삭제"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            // 일반 상태
-            <div className="flex items-center gap-2">
+    <div className="space-y-3">
+      {/* 전체 선택 + 삭제 액션 바 */}
+      <div className="flex items-center justify-between px-1">
+        <label className="flex cursor-pointer items-center gap-2">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={toggleAll}
+            className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600"
+          />
+          <span className="text-xs text-slate-500">
+            {someSelected ? `${selected.size}개 선택됨` : "전체 선택"}
+          </span>
+        </label>
+
+        {someSelected && (
+          <button
+            type="button"
+            onClick={() => setConfirm(true)}
+            className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+          >
+            <TrashIcon />
+            {selected.size}개 삭제
+          </button>
+        )}
+      </div>
+
+      {/* 삭제 확인 배너 */}
+      {confirm && (
+        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-sm text-red-700">
+            선택한 <span className="font-semibold">{selected.size}개</span> 내역을 삭제할까요?
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirm(false)}
+              className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteSelected}
+              disabled={deleting}
+              className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
+            >
+              {deleting ? "삭제 중…" : "삭제"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 리포트 목록 */}
+      <ul className="space-y-3">
+        {reports.map((report) => {
+          const isSelected = selected.has(report.id);
+          return (
+            <li key={report.id} className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => toggleSelect(report.id)}
+                className="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-blue-600"
+              />
               <Link
                 href={`/dashboard/${report.id}`}
-                className="flex flex-1 items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                className={`flex flex-1 items-center gap-4 rounded-3xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
+                  isSelected
+                    ? "border-blue-300 ring-1 ring-blue-200"
+                    : "border-slate-200 hover:border-blue-300"
+                }`}
               >
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50">
                   <ExcelIcon />
@@ -116,19 +178,11 @@ export default function DashboardClient({ initialReports }: { initialReports: Re
                 </div>
                 <ChevronRightIcon />
               </Link>
-              <button
-                type="button"
-                onClick={() => setConfirmId(report.id)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-slate-300 transition hover:bg-red-50 hover:text-red-400"
-                aria-label="삭제"
-              >
-                <TrashIcon />
-              </button>
-            </div>
-          )}
-        </li>
-      ))}
-    </ul>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -150,7 +204,7 @@ function ChevronRightIcon() {
 
 function TrashIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
     </svg>
   );
