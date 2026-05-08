@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { useReactToPrint } from "react-to-print";
+import * as XLSX from "xlsx";
 import type { FinanceRow, AccountType, PLSummary } from "@/types/finance";
 import { calcPLSummary } from "@/lib/aggregator";
 import MonthlyChart from "../MonthlyChart";
@@ -361,6 +362,103 @@ function EmptyState() {
   );
 }
 
+// ─── Excel 내보내기 ──────────────────────────────────────────────
+
+type Row = (string | number | null)[];
+
+function makeSheet(data: Row[], colWidths: number[]): XLSX.WorkSheet {
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = colWidths.map(wch => ({ wch }));
+  return ws;
+}
+
+function exportIncomeStatement(rows: FinanceRow[], filename: string) {
+  const revenue  = groupByAccount(rows.filter(r => r.type === "revenue"));
+  const cogs     = groupByAccount(rows.filter(r => r.type === "cogs"));
+  const expenses = groupByAccount(rows.filter(r => r.type === "expense"));
+
+  const totalRevenue      = sum(revenue);
+  const totalCogs         = sum(cogs);
+  const grossProfit       = totalRevenue - totalCogs;
+  const totalExpense      = sum(expenses);
+  const operatingProfit   = grossProfit - totalExpense;
+
+  const data: Row[] = [
+    ['계정과목', '금액', '합계'],
+    ['I. 매출액', null, totalRevenue],
+    ...Array.from(revenue.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ...(cogs.size > 0 ? [
+      ['II. 매출원가', null, totalCogs] as Row,
+      ...Array.from(cogs.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ['III. 매출총이익', null, grossProfit],
+    ...(expenses.size > 0 ? [
+      ['IV. 판매비와관리비', null, totalExpense] as Row,
+      ...Array.from(expenses.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ['V. 영업이익', null, operatingProfit],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, makeSheet(data, [32, 18, 18]), '손익계산서');
+  XLSX.writeFile(wb, `${filename}_손익계산서.xlsx`);
+}
+
+function exportBalanceSheet(rows: FinanceRow[], filename: string) {
+  const assets      = rows.filter(r => r.type === "asset");
+  const liabilities = rows.filter(r => r.type === "liability");
+  const equity      = rows.filter(r => r.type === "equity");
+
+  const currentAssets    = groupByAccount(assets.filter(r => CURRENT_ASSET_KW.some(kw => r.account.includes(kw))));
+  const nonCurrentAssets = groupByAccount(assets.filter(r => !CURRENT_ASSET_KW.some(kw => r.account.includes(kw))));
+  const currentLiab      = groupByAccount(liabilities.filter(r => CURRENT_LIABILITY_KW.some(kw => r.account.includes(kw))));
+  const nonCurrentLiab   = groupByAccount(liabilities.filter(r => !CURRENT_LIABILITY_KW.some(kw => r.account.includes(kw))));
+  const equityAccounts   = groupByAccount(equity);
+
+  const totalCurrentAssets    = sum(currentAssets);
+  const totalNonCurrentAssets = sum(nonCurrentAssets);
+  const totalAssets           = totalCurrentAssets + totalNonCurrentAssets;
+  const totalCurrentLiab      = sum(currentLiab);
+  const totalNonCurrentLiab   = sum(nonCurrentLiab);
+  const totalLiabilities      = totalCurrentLiab + totalNonCurrentLiab;
+  const totalEquity           = sum(equityAccounts);
+
+  const data: Row[] = [
+    ['계정과목', '금액', '합계'],
+    ['【자산】', null, null],
+    ...(currentAssets.size > 0 ? [
+      ['I. 유동자산', null, totalCurrentAssets] as Row,
+      ...Array.from(currentAssets.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(nonCurrentAssets.size > 0 ? [
+      ['II. 비유동자산', null, totalNonCurrentAssets] as Row,
+      ...Array.from(nonCurrentAssets.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ['자산 총계', null, totalAssets],
+    [null, null, null],
+    ['【부채】', null, null],
+    ...(currentLiab.size > 0 ? [
+      ['I. 유동부채', null, totalCurrentLiab] as Row,
+      ...Array.from(currentLiab.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(nonCurrentLiab.size > 0 ? [
+      ['II. 비유동부채', null, totalNonCurrentLiab] as Row,
+      ...Array.from(nonCurrentLiab.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ['부채 총계', null, totalLiabilities],
+    [null, null, null],
+    ['【자본】', null, null],
+    ...Array.from(equityAccounts.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ['자본 총계', null, totalEquity],
+    [null, null, null],
+    ['부채 및 자본 총계', null, totalLiabilities + totalEquity],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, makeSheet(data, [32, 18, 18]), '재무상태표');
+  XLSX.writeFile(wb, `${filename}_재무상태표.xlsx`);
+}
+
 // ─── 메인 컴포넌트 ───────────────────────────────────────────────
 
 interface ReportViewerProps {
@@ -396,9 +494,15 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
 
   const isStatementTab = tab === "income" || tab === "balance";
 
+  function handleExcelExport() {
+    const name = reportName.replace(/\.(xlsx|xls)$/i, "");
+    if (tab === "income")  exportIncomeStatement(rows, name);
+    if (tab === "balance") exportBalanceSheet(rows, name);
+  }
+
   return (
     <div className="space-y-4">
-      {/* 탭 + PDF 버튼 */}
+      {/* 탭 + 내보내기 버튼 */}
       <div className="flex items-center gap-2">
         <div className="flex flex-1 rounded-2xl bg-slate-100 p-1">
           {tabs.map((t) => (
@@ -421,14 +525,24 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
         </div>
 
         {isStatementTab && (
-          <button
-            type="button"
-            onClick={() => handlePrint()}
-            className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
-          >
-            <PrintIcon />
-            PDF
-          </button>
+          <>
+            <button
+              type="button"
+              onClick={() => handlePrint()}
+              className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
+            >
+              <PrintIcon />
+              PDF
+            </button>
+            <button
+              type="button"
+              onClick={handleExcelExport}
+              className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
+            >
+              <ExcelIcon />
+              Excel
+            </button>
+          </>
         )}
       </div>
 
@@ -441,6 +555,14 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
         {tab === "balance" && <BalanceSheetView rows={rows} />}
       </div>
     </div>
+  );
+}
+
+function ExcelIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
   );
 }
 
