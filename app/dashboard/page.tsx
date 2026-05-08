@@ -1,38 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { calcPLSummary } from "@/lib/aggregator";
-import type { AccountType, FinanceRow, PLSummary } from "@/types/finance";
-import MonthlyChart from "./MonthlyChart";
 import UserMenu from "@/components/UserMenu";
-
-type SummaryLabel = {
-  key: keyof PLSummary;
-  label: string;
-  type?: AccountType;
-  separator?: boolean;
-};
-
-const SUMMARY_LABELS: SummaryLabel[] = [
-  { key: "totalRevenue",    label: "총 매출",    type: "revenue" },
-  { key: "totalCogs",       label: "매출원가",   type: "cogs" },
-  { key: "grossProfit",     label: "매출총이익", separator: true },
-  { key: "totalExpense",    label: "판관비",     type: "expense" },
-  { key: "operatingProfit", label: "영업이익",   separator: true },
-];
 
 function formatKRW(n: number) {
   return n.toLocaleString("ko-KR") + "원";
 }
 
-function groupByTypeAndAccount(rows: FinanceRow[]): Map<AccountType, Map<string, number>> {
-  const map = new Map<AccountType, Map<string, number>>();
-  for (const row of rows) {
-    if (!map.has(row.type)) map.set(row.type, new Map());
-    const inner = map.get(row.type)!;
-    inner.set(row.account, (inner.get(row.account) ?? 0) + row.amount);
-  }
-  return map;
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default async function DashboardPage() {
@@ -40,21 +20,17 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: rows } = await supabase
-    .from("finance_rows")
-    .select("date, account, amount, type")
+  const { data: reports } = await supabase
+    .from("reports")
+    .select("id, name, row_count, total_revenue, gross_profit, operating_profit, created_at")
     .eq("user_id", user.id)
-    .order("date", { ascending: true });
-
-  const financeRows = (rows ?? []) as FinanceRow[];
-  const summary = financeRows.length > 0 ? calcPLSummary(financeRows) : null;
-  const breakdown = groupByTypeAndAccount(financeRows);
+    .order("created_at", { ascending: false });
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-12">
       <div className="mx-auto max-w-xl space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-slate-900">대시보드</h1>
+          <h1 className="text-2xl font-semibold text-slate-900">내역 관리</h1>
           <div className="flex items-center gap-3">
             <Link
               href="/upload"
@@ -69,63 +45,48 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <MonthlyChart rows={financeRows} />
-
-        {summary ? (
-          <>
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="mb-4 text-base font-semibold text-slate-800">
-                손익 요약{" "}
-                <span className="text-sm font-normal text-slate-400">
-                  ({financeRows.length}건)
-                </span>
-              </h2>
-              <dl className="space-y-2">
-                {SUMMARY_LABELS.map(({ key, label, type, separator }) => (
-                  <div key={key}>
-                    {separator && <div className="my-3 border-t border-slate-100" />}
-                    <div className="flex justify-between text-sm">
-                      <dt className={type ? "text-slate-500" : "font-medium text-slate-700"}>
-                        {label}
-                      </dt>
-                      <dd className={`font-semibold ${summary[key] < 0 ? "text-red-500" : "text-slate-900"}`}>
-                        {formatKRW(summary[key])}
-                      </dd>
-                    </div>
-                    {type && breakdown.get(type) && (
-                      <div className="mt-1 space-y-0.5 border-l-2 border-slate-100 pl-3">
-                        {Array.from(breakdown.get(type)!.entries()).map(([account, amount]) => (
-                          <div key={account} className="flex justify-between text-xs">
-                            <span className="text-slate-400">{account}</span>
-                            <span className="text-slate-400">{formatKRW(amount)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+        {reports && reports.length > 0 ? (
+          <ul className="space-y-3">
+            {reports.map((report) => (
+              <li key={report.id}>
+                <Link
+                  href={`/dashboard/${report.id}`}
+                  className="flex items-center gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-50">
+                    <ExcelIcon />
                   </div>
-                ))}
-              </dl>
-            </div>
 
-            {breakdown.get("other") && (
-              <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
-                <h2 className="mb-3 text-base font-semibold text-amber-800">미분류 항목</h2>
-                <p className="mb-3 text-xs text-amber-600">자동 분류되지 않은 계정과목입니다. 직접 확인이 필요합니다.</p>
-                <div className="space-y-1">
-                  {Array.from(breakdown.get("other")!.entries()).map(([account, amount]) => (
-                    <div key={account} className="flex justify-between text-sm">
-                      <span className="text-amber-700">{account}</span>
-                      <span className="font-medium text-amber-800">{formatKRW(amount)}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-slate-900">{report.name}</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      {formatDate(report.created_at)} · {report.row_count}건
+                    </p>
+                    <div className="mt-2.5 flex gap-5">
+                      <div>
+                        <p className="text-xs text-slate-400">매출</p>
+                        <p className="text-sm font-semibold text-slate-700">
+                          {formatKRW(report.total_revenue)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">영업이익</p>
+                        <p className={`text-sm font-semibold ${report.operating_profit < 0 ? "text-red-500" : "text-emerald-600"}`}>
+                          {formatKRW(report.operating_profit)}
+                        </p>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
+                  </div>
+
+                  <ChevronRightIcon />
+                </Link>
+              </li>
+            ))}
+          </ul>
         ) : (
           <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
-            <p className="text-sm font-medium text-slate-500">아직 데이터가 없습니다.</p>
-            <p className="mt-1 text-sm text-slate-400">엑셀 파일을 업로드하면 손익이 여기에 표시됩니다.</p>
+            <p className="text-sm font-medium text-slate-500">아직 업로드한 내역이 없습니다.</p>
+            <p className="mt-1 text-sm text-slate-400">엑셀 파일을 업로드하면 여기에 표시됩니다.</p>
             <Link
               href="/upload"
               className="mt-6 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
@@ -136,5 +97,21 @@ export default async function DashboardPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function ExcelIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+    </svg>
+  );
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 shrink-0 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+    </svg>
   );
 }

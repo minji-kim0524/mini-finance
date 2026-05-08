@@ -42,9 +42,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '분석할 데이터가 없습니다. 날짜·계정과목·금액 열이 있는지 확인해주세요.' }, { status: 400 });
   }
 
-  const { error } = await supabase.from('finance_rows').insert(
+  const summary = calcPLSummary(rows);
+
+  const { data: report, error: reportError } = await supabase
+    .from('reports')
+    .insert({
+      user_id: user.id,
+      name: file.name,
+      row_count: rows.length,
+      total_revenue: summary.totalRevenue,
+      gross_profit: summary.grossProfit,
+      operating_profit: summary.operatingProfit,
+    })
+    .select('id')
+    .single();
+
+  if (reportError || !report) {
+    return NextResponse.json({ error: reportError?.message ?? 'Failed to create report' }, { status: 500 });
+  }
+
+  const { error: rowsError } = await supabase.from('finance_rows').insert(
     rows.map((row) => ({
       user_id: user.id,
+      report_id: report.id,
       date: row.date,
       account: row.account,
       amount: row.amount,
@@ -52,9 +72,10 @@ export async function POST(request: NextRequest) {
     }))
   );
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  if (rowsError) {
+    await supabase.from('reports').delete().eq('id', report.id);
+    return NextResponse.json({ error: rowsError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ rows, summary: calcPLSummary(rows) });
+  return NextResponse.json({ reportId: report.id, summary });
 }

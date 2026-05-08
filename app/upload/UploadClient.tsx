@@ -2,13 +2,13 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import type { FinanceRow, PLSummary } from "@/types/finance";
+import type { PLSummary } from "@/types/finance";
 import UserMenu from "@/components/UserMenu";
 
 type UploadState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "success"; rows: FinanceRow[]; summary: PLSummary }
+  | { status: "success"; reportId: string; summary: PLSummary }
   | { status: "error"; message: string };
 
 const SUMMARY_LABELS: { key: keyof PLSummary; label: string }[] = [
@@ -62,7 +62,7 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
         return;
       }
 
-      setState({ status: "success", rows: json.rows, summary: json.summary });
+      setState({ status: "success", reportId: json.reportId, summary: json.summary });
     } catch {
       setState({ status: "error", message: "네트워크 오류가 발생했습니다." });
     }
@@ -83,7 +83,7 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
               href="/dashboard"
               className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
             >
-              대시보드
+              내역 관리
             </Link>
             <UserMenu name={userName} email={userEmail} />
           </div>
@@ -141,10 +141,7 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
           <div className="space-y-4">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-base font-semibold text-slate-800">
-                손익 요약{" "}
-                <span className="text-sm font-normal text-slate-400">
-                  ({state.rows.length}건)
-                </span>
+                분석 완료
               </h2>
               <dl className="space-y-2">
                 {SUMMARY_LABELS.map(({ key, label }) => (
@@ -162,10 +159,10 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
               </dl>
             </div>
             <Link
-              href="/dashboard"
+              href={`/dashboard/${state.reportId}`}
               className="block w-full rounded-2xl bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-slate-700"
             >
-              대시보드에서 전체 내역 확인
+              상세 대시보드 보기
             </Link>
           </div>
         )}
