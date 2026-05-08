@@ -7,6 +7,13 @@ import MonthlyChart from "../MonthlyChart";
 
 type Tab = "dashboard" | "income" | "balance";
 
+// 금액 표시: 음수는 괄호, 0은 대시, 원 단위
+function fmtNum(n: number): string {
+  if (n === 0) return "-";
+  const abs = Math.abs(n).toLocaleString("ko-KR");
+  return n < 0 ? `(${abs})` : abs;
+}
+
 function formatKRW(n: number) {
   return n.toLocaleString("ko-KR") + "원";
 }
@@ -17,6 +24,74 @@ function groupByAccount(rows: FinanceRow[]): Map<string, number> {
     map.set(row.account, (map.get(row.account) ?? 0) + row.amount);
   }
   return map;
+}
+
+function sum(map: Map<string, number>): number {
+  return Array.from(map.values()).reduce((s, v) => s + v, 0);
+}
+
+// ─── 공통 테이블 행 컴포넌트 ─────────────────────────────────────
+
+function TableHeader() {
+  return (
+    <thead>
+      <tr className="border-b-2 border-slate-200">
+        <th className="py-2.5 text-left text-xs font-semibold text-slate-500">계정과목</th>
+        <th className="py-2.5 pr-3 text-right text-xs font-semibold text-slate-500">금액</th>
+        <th className="py-2.5 text-right text-xs font-semibold text-slate-500">합계</th>
+      </tr>
+    </thead>
+  );
+}
+
+// 섹션 헤더 행 (I. 매출액 등)
+function SectionRow({ roman, label, total, highlight }: { roman: string; label: string; total: number; highlight?: boolean }) {
+  return (
+    <tr className={highlight ? "border-t-2 border-slate-300 bg-slate-50" : "border-t border-slate-100 bg-slate-50"}>
+      <td className={`py-2.5 text-sm ${highlight ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}>
+        <span className="mr-1.5 text-xs font-normal text-slate-400">{roman}</span>{label}
+      </td>
+      <td className="py-2.5 pr-3" />
+      <td className={`py-2.5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
+        {fmtNum(total)}
+      </td>
+    </tr>
+  );
+}
+
+// 소계 행 (매출총이익, 영업이익 등)
+function SubtotalRow({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+  return (
+    <tr className="border-t-2 border-slate-300 bg-slate-50">
+      <td className={`py-2.5 text-sm ${bold ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{label}</td>
+      <td className="py-2.5 pr-3" />
+      <td className={`py-2.5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
+        {fmtNum(value)}
+      </td>
+    </tr>
+  );
+}
+
+// 세부 계정 행 (들여쓰기)
+function AccountRow({ account, amount, indent = 1 }: { account: string; amount: number; indent?: number }) {
+  return (
+    <tr className="border-t border-slate-50 hover:bg-slate-50/60">
+      <td className={`py-1.5 text-xs text-slate-500 ${indent === 2 ? "pl-10" : "pl-5"}`}>{account}</td>
+      <td className="py-1.5 pr-3 text-right text-xs text-slate-500">{fmtNum(amount)}</td>
+      <td className="py-1.5" />
+    </tr>
+  );
+}
+
+// 섹션 제목 행 (자산, 부채, 자본)
+function CategoryRow({ label }: { label: string }) {
+  return (
+    <tr className="bg-slate-800">
+      <td colSpan={3} className="px-1 py-2 text-xs font-bold tracking-widest text-slate-100">
+        {label}
+      </td>
+    </tr>
+  );
 }
 
 // ─── 대시보드 뷰 ────────────────────────────────────────────────
@@ -49,7 +124,6 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
   return (
     <div className="space-y-4">
       <MonthlyChart rows={plRows} />
-
       {summary ? (
         <>
           <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -81,11 +155,10 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
               ))}
             </dl>
           </div>
-
           {otherBreakdown.size > 0 && (
             <div className="rounded-3xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
               <h2 className="mb-3 text-base font-semibold text-amber-800">미분류 항목</h2>
-              <p className="mb-3 text-xs text-amber-600">자동 분류되지 않은 계정과목입니다. 직접 확인이 필요합니다.</p>
+              <p className="mb-3 text-xs text-amber-600">자동 분류되지 않은 계정과목입니다.</p>
               <div className="space-y-1">
                 {Array.from(otherBreakdown.entries()).map(([account, amount]) => (
                   <div key={account} className="flex justify-between text-sm">
@@ -111,110 +184,66 @@ function IncomeStatementView({ rows }: { rows: FinanceRow[] }) {
   const cogs     = useMemo(() => groupByAccount(rows.filter(r => r.type === "cogs")),     [rows]);
   const expenses = useMemo(() => groupByAccount(rows.filter(r => r.type === "expense")),  [rows]);
 
-  const totalRevenue  = Array.from(revenue.values()).reduce((s, v) => s + v, 0);
-  const totalCogs     = Array.from(cogs.values()).reduce((s, v) => s + v, 0);
-  const grossProfit   = totalRevenue - totalCogs;
-  const totalExpense  = Array.from(expenses.values()).reduce((s, v) => s + v, 0);
-  const operatingProfit = grossProfit - totalExpense;
+  const totalRevenue      = sum(revenue);
+  const totalCogs         = sum(cogs);
+  const grossProfit       = totalRevenue - totalCogs;
+  const totalExpense      = sum(expenses);
+  const operatingProfit   = grossProfit - totalExpense;
 
   if (revenue.size === 0 && cogs.size === 0 && expenses.size === 0) return <EmptyState />;
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-6 py-4 text-center">
-        <h2 className="text-base font-semibold text-slate-900">손익계산서</h2>
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3.5 text-center">
+        <p className="text-base font-semibold text-slate-900">손익계산서</p>
+        <p className="mt-0.5 text-xs text-slate-400">(단위: 원)</p>
       </div>
-      <div className="divide-y divide-slate-100">
-        {/* I. 매출액 */}
-        <ISSection
-          roman="I."
-          label="매출액"
-          total={totalRevenue}
-          items={revenue}
-          isPositive
-        />
-        {/* II. 매출원가 */}
-        <ISSection
-          roman="II."
-          label="매출원가"
-          total={totalCogs}
-          items={cogs}
-        />
-        {/* III. 매출총이익 */}
-        <ISSeparator roman="III." label="매출총이익" value={grossProfit} />
-        {/* IV. 판매비와관리비 */}
-        <ISSection
-          roman="IV."
-          label="판매비와관리비"
-          total={totalExpense}
-          items={expenses}
-        />
-        {/* V. 영업이익 */}
-        <ISSeparator roman="V." label="영업이익" value={operatingProfit} highlight />
-      </div>
-    </div>
-  );
-}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[320px]">
+          <TableHeader />
+          <tbody>
+            {/* I. 매출액 */}
+            <SectionRow roman="I." label="매출액" total={totalRevenue} />
+            {Array.from(revenue.entries()).map(([account, amount]) => (
+              <AccountRow key={account} account={account} amount={amount} />
+            ))}
 
-function ISSection({
-  roman, label, total, items, isPositive,
-}: {
-  roman: string;
-  label: string;
-  total: number;
-  items: Map<string, number>;
-  isPositive?: boolean;
-}) {
-  return (
-    <div className="px-6 py-4">
-      <div className="flex items-baseline justify-between">
-        <span className="text-sm font-medium text-slate-700">
-          <span className="mr-1.5 text-xs text-slate-400">{roman}</span>{label}
-        </span>
-        <span className={`text-sm font-semibold ${!isPositive && total > 0 ? "text-red-500" : total < 0 ? "text-red-500" : "text-slate-900"}`}>
-          {isPositive ? "" : total > 0 ? "(" : ""}{formatKRW(Math.abs(total))}{!isPositive && total > 0 ? ")" : ""}
-        </span>
-      </div>
-      {items.size > 0 && (
-        <div className="mt-2 space-y-1 border-l-2 border-slate-100 pl-4">
-          {Array.from(items.entries()).map(([account, amount]) => (
-            <div key={account} className="flex justify-between text-xs">
-              <span className="text-slate-400">{account}</span>
-              <span className="text-slate-400">{formatKRW(amount)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+            {/* II. 매출원가 */}
+            {cogs.size > 0 && (
+              <>
+                <SectionRow roman="II." label="매출원가" total={totalCogs} />
+                {Array.from(cogs.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
 
-function ISSeparator({ roman, label, value, highlight }: { roman: string; label: string; value: number; highlight?: boolean }) {
-  return (
-    <div className={`flex items-baseline justify-between px-6 py-4 ${highlight ? "bg-slate-50" : ""}`}>
-      <span className={`text-sm ${highlight ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>
-        <span className="mr-1.5 text-xs text-slate-400">{roman}</span>{label}
-      </span>
-      <span className={`text-sm font-bold ${value < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
-        {formatKRW(value)}
-      </span>
+            {/* III. 매출총이익 */}
+            <SubtotalRow label="III. 매출총이익" value={grossProfit} />
+
+            {/* IV. 판매비와관리비 */}
+            {expenses.size > 0 && (
+              <>
+                <SectionRow roman="IV." label="판매비와관리비" total={totalExpense} />
+                {Array.from(expenses.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
+
+            {/* V. 영업이익 */}
+            <SubtotalRow label="V. 영업이익" value={operatingProfit} bold />
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
 // ─── 재무상태표 뷰 ───────────────────────────────────────────────
 
-const CURRENT_ASSET_KW = [
-  '현금', '보통예금', '당좌예금', '정기예금', '정기적금', '외화예금',
-  '매출채권', '받을어음', '외상매출금', '미수금', '미수수익',
-  '선급금', '선급비용', '단기대여금',
-  '재고자산', '재공품', '저장품',
-];
-const CURRENT_LIABILITY_KW = [
-  '매입채무', '지급어음', '외상매입금',
-  '미지급금', '미지급비용', '선수금', '예수금', '부가세예수금',
-  '단기차입금', '유동성장기부채',
-];
+const CURRENT_ASSET_KW     = ['현금','보통예금','당좌예금','정기예금','정기적금','외화예금','매출채권','받을어음','외상매출금','미수금','미수수익','선급금','선급비용','단기대여금','재고자산','재공품','저장품'];
+const CURRENT_LIABILITY_KW = ['매입채무','지급어음','외상매입금','미지급금','미지급비용','선수금','예수금','부가세예수금','단기차입금','유동성장기부채'];
 
 function subClassify(account: string, type: 'asset' | 'liability'): 'current' | 'non_current' {
   const kws = type === 'asset' ? CURRENT_ASSET_KW : CURRENT_LIABILITY_KW;
@@ -244,90 +273,84 @@ function BalanceSheetView({ rows }: { rows: FinanceRow[] }) {
   const totalLiabAndEquity    = totalLiabilities + totalEquity;
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-6 py-4 text-center">
-        <h2 className="text-base font-semibold text-slate-900">재무상태표</h2>
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3.5 text-center">
+        <p className="text-base font-semibold text-slate-900">재무상태표</p>
+        <p className="mt-0.5 text-xs text-slate-400">(단위: 원)</p>
       </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[320px]">
+          <TableHeader />
+          <tbody>
+            {/* ── 자산 ── */}
+            <CategoryRow label="자  산" />
 
-      {/* 자산 */}
-      <BSSection title="자산" titleBg="bg-blue-50">
-        <BSSubSection label="유동자산" total={totalCurrentAssets} items={currentAssets} />
-        <BSSubSection label="비유동자산" total={totalNonCurrentAssets} items={nonCurrentAssets} />
-        <BSTotal label="자산 총계" value={totalAssets} />
-      </BSSection>
+            {currentAssets.size > 0 && (
+              <>
+                <SectionRow roman="I." label="유동자산" total={totalCurrentAssets} />
+                {Array.from(currentAssets.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
 
-      {/* 부채 */}
-      <BSSection title="부채" titleBg="bg-red-50">
-        <BSSubSection label="유동부채" total={totalCurrentLiab} items={currentLiab} />
-        <BSSubSection label="비유동부채" total={totalNonCurrentLiab} items={nonCurrentLiab} />
-        <BSTotal label="부채 총계" value={totalLiabilities} />
-      </BSSection>
+            {nonCurrentAssets.size > 0 && (
+              <>
+                <SectionRow roman="II." label="비유동자산" total={totalNonCurrentAssets} />
+                {Array.from(nonCurrentAssets.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
 
-      {/* 자본 */}
-      <BSSection title="자본" titleBg="bg-emerald-50">
-        <div className="space-y-1 px-6 py-3">
-          {Array.from(equityAccounts.entries()).map(([account, amount]) => (
-            <div key={account} className="flex justify-between text-sm">
-              <span className="text-slate-600">{account}</span>
-              <span className="text-slate-700">{formatKRW(amount)}</span>
-            </div>
-          ))}
-        </div>
-        <BSTotal label="자본 총계" value={totalEquity} />
-      </BSSection>
+            <SubtotalRow label="자산 총계" value={totalAssets} bold />
 
-      {/* 부채 및 자본 총계 */}
-      <div className="flex justify-between rounded-b-3xl bg-slate-900 px-6 py-4">
-        <span className="text-sm font-semibold text-white">부채 및 자본 총계</span>
-        <span className="text-sm font-bold text-white">{formatKRW(totalLiabAndEquity)}</span>
+            {/* ── 부채 ── */}
+            <CategoryRow label="부  채" />
+
+            {currentLiab.size > 0 && (
+              <>
+                <SectionRow roman="I." label="유동부채" total={totalCurrentLiab} />
+                {Array.from(currentLiab.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
+
+            {nonCurrentLiab.size > 0 && (
+              <>
+                <SectionRow roman="II." label="비유동부채" total={totalNonCurrentLiab} />
+                {Array.from(nonCurrentLiab.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} />
+                ))}
+              </>
+            )}
+
+            <SubtotalRow label="부채 총계" value={totalLiabilities} bold />
+
+            {/* ── 자본 ── */}
+            <CategoryRow label="자  본" />
+
+            {Array.from(equityAccounts.entries()).map(([account, amount]) => (
+              <AccountRow key={account} account={account} amount={amount} />
+            ))}
+
+            <SubtotalRow label="자본 총계" value={totalEquity} bold />
+
+            {/* 부채 및 자본 총계 */}
+            <tr className="border-t-2 border-slate-800 bg-slate-900">
+              <td className="py-3 pl-1 text-sm font-bold text-white">부채 및 자본 총계</td>
+              <td className="py-3 pr-3" />
+              <td className="py-3 text-right text-sm font-bold text-white">{fmtNum(totalLiabAndEquity)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
 
-function BSSection({ title, titleBg, children }: { title: string; titleBg: string; children: React.ReactNode }) {
-  return (
-    <div className="border-b border-slate-100 last:border-b-0">
-      <div className={`px-6 py-2.5 ${titleBg}`}>
-        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</span>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function BSSubSection({ label, total, items }: { label: string; total: number; items: Map<string, number> }) {
-  if (items.size === 0) return null;
-  return (
-    <div className="px-6 py-3">
-      <div className="flex justify-between text-sm">
-        <span className="font-medium text-slate-700">{label}</span>
-        <span className="font-semibold text-slate-900">{formatKRW(total)}</span>
-      </div>
-      <div className="mt-1.5 space-y-1 border-l-2 border-slate-100 pl-4">
-        {Array.from(items.entries()).map(([account, amount]) => (
-          <div key={account} className="flex justify-between text-xs">
-            <span className="text-slate-400">{account}</span>
-            <span className="text-slate-400">{formatKRW(amount)}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function BSTotal({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="flex justify-between border-t border-slate-100 px-6 py-3">
-      <span className="text-sm font-semibold text-slate-800">{label}</span>
-      <span className={`text-sm font-bold ${value < 0 ? "text-red-500" : "text-slate-900"}`}>{formatKRW(value)}</span>
-    </div>
-  );
-}
-
-function sum(map: Map<string, number>): number {
-  return Array.from(map.values()).reduce((s, v) => s + v, 0);
-}
+// ─── 공통 ────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -355,7 +378,6 @@ export default function ReportViewer({ rows }: { rows: FinanceRow[] }) {
 
   return (
     <div className="space-y-4">
-      {/* 탭 */}
       <div className="flex rounded-2xl bg-slate-100 p-1">
         {tabs.map((t) => (
           <button
@@ -376,7 +398,6 @@ export default function ReportViewer({ rows }: { rows: FinanceRow[] }) {
         ))}
       </div>
 
-      {/* 컨텐츠 */}
       {tab === "dashboard" && <DashboardView rows={rows} />}
       {tab === "income"    && <IncomeStatementView rows={rows} />}
       {tab === "balance"   && <BalanceSheetView rows={rows} />}
