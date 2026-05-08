@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
+import { useParams } from "next/navigation";
 import type { FinanceRow, AccountType, PLSummary } from "@/types/finance";
 import { calcPLSummary } from "@/lib/aggregator";
 import MonthlyChart from "../MonthlyChart";
 
-type Tab = "dashboard" | "income" | "balance";
+type Tab = "dashboard" | "income" | "balance" | "classify";
 
 // 금액 표시: 음수는 괄호, 0은 대시, 원 단위
 function fmtNum(n: number): string {
@@ -362,6 +363,120 @@ function EmptyState() {
   );
 }
 
+// ─── 계정 분류 뷰 ────────────────────────────────────────────────
+
+const TYPE_LABELS: Record<AccountType, string> = {
+  revenue:   "매출",
+  cogs:      "매출원가",
+  expense:   "판관비",
+  asset:     "자산",
+  liability: "부채",
+  equity:    "자본",
+  other:     "미분류",
+};
+
+const TYPE_COLORS: Record<AccountType, string> = {
+  revenue:   "bg-blue-100 text-blue-700",
+  cogs:      "bg-orange-100 text-orange-700",
+  expense:   "bg-purple-100 text-purple-700",
+  asset:     "bg-emerald-100 text-emerald-700",
+  liability: "bg-rose-100 text-rose-700",
+  equity:    "bg-teal-100 text-teal-700",
+  other:     "bg-amber-100 text-amber-800",
+};
+
+const ALL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "asset", "liability", "equity", "other"];
+
+function ClassifyView({
+  rows,
+  onReclassify,
+}: {
+  rows: FinanceRow[];
+  onReclassify: (account: string, type: AccountType) => Promise<void>;
+}) {
+  const [pending, setPending] = useState<string | null>(null);
+
+  // 계정과목 단위로 집계 (같은 계정은 하나로)
+  const accounts = useMemo(() => {
+    const map = new Map<string, { type: AccountType; total: number }>();
+    for (const row of rows) {
+      const existing = map.get(row.account);
+      if (existing) {
+        existing.total += row.amount;
+      } else {
+        map.set(row.account, { type: row.type, total: row.amount });
+      }
+    }
+    // other 먼저, 나머지는 type 순
+    return Array.from(map.entries()).sort((a, b) => {
+      if (a[1].type === "other" && b[1].type !== "other") return -1;
+      if (a[1].type !== "other" && b[1].type === "other") return 1;
+      return a[1].type.localeCompare(b[1].type);
+    });
+  }, [rows]);
+
+  async function handleChange(account: string, newType: AccountType) {
+    setPending(account);
+    try {
+      await onReclassify(account, newType);
+    } finally {
+      setPending(null);
+    }
+  }
+
+  const otherCount = accounts.filter(([, v]) => v.type === "other").length;
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-5 py-4">
+        <p className="text-base font-semibold text-slate-900">계정 분류 수정</p>
+        <p className="mt-0.5 text-xs text-slate-400">
+          자동 분류가 잘못된 항목을 직접 수정할 수 있습니다.
+          {otherCount > 0 && (
+            <span className="ml-1.5 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+              미분류 {otherCount}건
+            </span>
+          )}
+        </p>
+      </div>
+      <div className="divide-y divide-slate-50">
+        {accounts.map(([account, { type, total }]) => (
+          <div
+            key={account}
+            className={`flex items-center gap-3 px-5 py-3 transition ${type === "other" ? "bg-amber-50/60" : ""}`}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800">{account}</p>
+              <p className="mt-0.5 text-xs text-slate-400">{fmtNum(total)}원</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${TYPE_COLORS[type]}`}>
+                {TYPE_LABELS[type]}
+              </span>
+              <select
+                value={type}
+                disabled={pending === account}
+                onChange={(e) => handleChange(account, e.target.value as AccountType)}
+                className="rounded-xl border border-slate-200 bg-white py-1.5 pl-2.5 pr-7 text-xs font-medium text-slate-600 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
+              >
+                {ALL_TYPES.map((t) => (
+                  <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                ))}
+              </select>
+              {pending === account && (
+                <svg className="h-4 w-4 animate-spin text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Excel 내보내기 ──────────────────────────────────────────────
 
 type Row = (string | number | null)[];
@@ -466,14 +581,26 @@ interface ReportViewerProps {
   reportName: string;
 }
 
-export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
+export default function ReportViewer({ rows: initialRows, reportName }: ReportViewerProps) {
   const [tab, setTab] = useState<Tab>("dashboard");
+  const [rows, setRows] = useState<FinanceRow[]>(initialRows);
   const printRef = useRef<HTMLDivElement>(null);
+  const params = useParams<{ reportId: string }>();
 
   const hasBalanceSheet = useMemo(
     () => rows.some(r => r.type === "asset" || r.type === "liability" || r.type === "equity"),
     [rows]
   );
+
+  const handleReclassify = useCallback(async (account: string, newType: AccountType) => {
+    const res = await fetch(`/api/reports/${params.reportId}/reclassify`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account, type: newType }),
+    });
+    if (!res.ok) return;
+    setRows(prev => prev.map(r => r.account === account ? { ...r, type: newType } : r));
+  }, [params.reportId]);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -490,9 +617,14 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
     { value: "dashboard", label: "대시보드" },
     { value: "income",    label: "손익계산서" },
     { value: "balance",   label: "재무상태표", disabled: !hasBalanceSheet },
+    { value: "classify",  label: "계정 분류" },
   ];
 
   const isStatementTab = tab === "income" || tab === "balance";
+  const otherCount = useMemo(() => {
+    const seen = new Set<string>();
+    return rows.filter(r => { if (r.type === "other" && !seen.has(r.account)) { seen.add(r.account); return true; } return false; }).length;
+  }, [rows]);
 
   function handleExcelExport() {
     const name = reportName.replace(/\.(xlsx|xls)$/i, "");
@@ -511,7 +643,7 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
               type="button"
               onClick={() => !t.disabled && setTab(t.value)}
               disabled={t.disabled}
-              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
+              className={`relative flex-1 rounded-xl py-2 text-sm font-semibold transition ${
                 tab === t.value
                   ? "bg-white text-slate-900 shadow-sm"
                   : t.disabled
@@ -520,6 +652,11 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
               }`}
             >
               {t.label}
+              {t.value === "classify" && otherCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white">
+                  {otherCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -554,6 +691,9 @@ export default function ReportViewer({ rows, reportName }: ReportViewerProps) {
         {tab === "income"  && <IncomeStatementView rows={rows} />}
         {tab === "balance" && <BalanceSheetView rows={rows} />}
       </div>
+
+      {/* 계정 분류 탭 */}
+      {tab === "classify" && <ClassifyView rows={rows} onReclassify={handleReclassify} />}
     </div>
   );
 }
