@@ -1,5 +1,5 @@
-import { stripe } from "@/lib/stripe";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getStripe } from "@/lib/stripe";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    event = getStripe().webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     if (!userId) return NextResponse.json({ error: "No user_id" }, { status: 400 });
 
-    await supabaseAdmin.from("subscriptions").upsert({
+    await getSupabaseAdmin().from("subscriptions").upsert({
       user_id: userId,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     if (!userId) return NextResponse.json({ ok: true });
 
     const isActive = subscription.status === "active" || subscription.status === "trialing";
-    await supabaseAdmin.from("subscriptions").upsert({
+    await getSupabaseAdmin().from("subscriptions").upsert({
       user_id: userId,
       stripe_customer_id: subscription.customer as string,
       stripe_subscription_id: subscription.id,
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
     const userId = subscription.metadata?.user_id;
     if (!userId) return NextResponse.json({ ok: true });
 
-    await supabaseAdmin.from("subscriptions").upsert({
+    await getSupabaseAdmin().from("subscriptions").upsert({
       user_id: userId,
       plan: "free",
       status: "canceled",
