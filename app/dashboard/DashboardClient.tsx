@@ -25,7 +25,7 @@ function formatDate(iso: string) {
   });
 }
 
-export default function DashboardClient({ initialReports }: { initialReports: Report[] }) {
+export default function DashboardClient({ initialReports, plan }: { initialReports: Report[]; plan: string }) {
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirm, setConfirm] = useState(false);
@@ -63,17 +63,25 @@ export default function DashboardClient({ initialReports }: { initialReports: Re
     }
   }
 
+  const isPro = plan === "pro";
+  const atLimit = !isPro && reports.length >= 3;
+
   if (reports.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
-        <p className="text-sm font-medium text-slate-500">아직 업로드한 내역이 없습니다.</p>
-        <p className="mt-1 text-sm text-slate-400">엑셀 파일을 업로드하면 여기에 표시됩니다.</p>
-        <Link
-          href="/upload"
-          className="mt-6 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
-        >
-          첫 파일 업로드하기
-        </Link>
+      <div className="space-y-3">
+        {!isPro && (
+          <PlanBadge count={0} isPro={false} />
+        )}
+        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white px-6 py-16 text-center">
+          <p className="text-sm font-medium text-slate-500">아직 업로드한 내역이 없습니다.</p>
+          <p className="mt-1 text-sm text-slate-400">엑셀 파일을 업로드하면 여기에 표시됩니다.</p>
+          <Link
+            href="/upload"
+            className="mt-6 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            첫 파일 업로드하기
+          </Link>
+        </div>
       </div>
     );
   }
@@ -83,6 +91,8 @@ export default function DashboardClient({ initialReports }: { initialReports: Re
 
   return (
     <div className="space-y-3">
+      {!isPro && <PlanBadge count={reports.length} isPro={false} />}
+      {atLimit && <UpgradeBanner />}
       {/* 전체 선택 + 삭제 액션 바 */}
       <div className="flex items-center justify-between px-1">
         <label className="flex cursor-pointer items-center gap-2">
@@ -182,6 +192,40 @@ export default function DashboardClient({ initialReports }: { initialReports: Re
           );
         })}
       </ul>
+    </div>
+  );
+}
+
+function PlanBadge({ count, isPro }: { count: number; isPro: boolean }) {
+  if (isPro) return null;
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-2.5">
+      <span className="text-xs text-slate-500">
+        무료 플랜 · <span className="font-semibold text-slate-700">{count}/3</span> 리포트 사용 중
+      </span>
+      <Link
+        href="/pricing"
+        className="text-xs font-semibold text-blue-600 transition hover:text-blue-700"
+      >
+        Pro 업그레이드 →
+      </Link>
+    </div>
+  );
+}
+
+function UpgradeBanner() {
+  return (
+    <div className="flex items-center justify-between rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
+      <div>
+        <p className="text-sm font-semibold text-amber-800">리포트 3개 한도 도달</p>
+        <p className="text-xs text-amber-600 mt-0.5">Pro로 업그레이드하면 무제한으로 저장할 수 있어요.</p>
+      </div>
+      <Link
+        href="/pricing"
+        className="shrink-0 rounded-xl bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600"
+      >
+        업그레이드
+      </Link>
     </div>
   );
 }

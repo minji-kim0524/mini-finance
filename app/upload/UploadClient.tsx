@@ -10,7 +10,8 @@ type UploadState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "success"; reportId: string; summary: PLSummary }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string }
+  | { status: "limit" };
 
 const SUMMARY_LABELS: { key: keyof PLSummary; label: string }[] = [
   { key: "totalRevenue", label: "총 매출" },
@@ -27,9 +28,11 @@ function formatKRW(n: number) {
 interface UploadClientProps {
   userName: string | null;
   userEmail: string;
+  plan: string;
+  hasCustomerId: boolean;
 }
 
-export default function UploadClient({ userName, userEmail }: UploadClientProps) {
+export default function UploadClient({ userName, userEmail, plan, hasCustomerId }: UploadClientProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -59,6 +62,10 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
       const json = await res.json();
 
       if (!res.ok) {
+        if (json.code === "FREE_LIMIT") {
+          setState({ status: "limit" });
+          return;
+        }
         setState({ status: "error", message: json.error ?? "업로드 실패" });
         return;
       }
@@ -86,7 +93,7 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
             >
               내역 관리
             </Link>
-            <UserMenu name={userName} email={userEmail} />
+            <UserMenu name={userName} email={userEmail} plan={plan} hasCustomerId={hasCustomerId} />
           </div>
         </div>
 
@@ -131,6 +138,20 @@ export default function UploadClient({ userName, userEmail }: UploadClientProps)
         </button>
 
         <FormatGuide />
+
+        {/* Free limit reached */}
+        {state.status === "limit" && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 space-y-3">
+            <p className="text-sm font-semibold text-amber-800">무료 플랜 리포트 한도 도달</p>
+            <p className="text-sm text-amber-700">무료 플랜은 리포트를 3개까지 저장할 수 있습니다. Pro로 업그레이드하면 무제한으로 저장할 수 있어요.</p>
+            <Link
+              href="/pricing"
+              className="inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Pro 업그레이드하기
+            </Link>
+          </div>
+        )}
 
         {/* Error */}
         {state.status === "error" && (

@@ -14,6 +14,28 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const { data: sub } = await supabase
+    .from('subscriptions')
+    .select('plan')
+    .eq('user_id', user.id)
+    .single();
+
+  const isPro = sub?.plan === 'pro';
+
+  if (!isPro) {
+    const { count } = await supabase
+      .from('reports')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id);
+
+    if ((count ?? 0) >= 3) {
+      return NextResponse.json(
+        { error: '무료 플랜은 리포트를 3개까지만 저장할 수 있습니다. Pro로 업그레이드하세요.', code: 'FREE_LIMIT' },
+        { status: 403 }
+      );
+    }
+  }
+
   const formData = await request.formData();
   const file = formData.get('file') as File | null;
 

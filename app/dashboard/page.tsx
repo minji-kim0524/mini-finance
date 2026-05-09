@@ -9,11 +9,21 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: reports } = await supabase
-    .from("reports")
-    .select("id, name, row_count, total_revenue, gross_profit, operating_profit, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+  const [{ data: reports }, { data: sub }] = await Promise.all([
+    supabase
+      .from("reports")
+      .select("id, name, row_count, total_revenue, gross_profit, operating_profit, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("subscriptions")
+      .select("plan, stripe_customer_id")
+      .eq("user_id", user.id)
+      .single(),
+  ]);
+
+  const plan = sub?.plan ?? "free";
+  const customerId = sub?.stripe_customer_id ?? null;
 
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-12">
@@ -30,11 +40,13 @@ export default async function DashboardPage() {
             <UserMenu
               name={user.user_metadata?.name ?? null}
               email={user.email ?? ""}
+              plan={plan}
+              hasCustomerId={!!customerId}
             />
           </div>
         </div>
 
-        <DashboardClient initialReports={reports ?? []} />
+        <DashboardClient initialReports={reports ?? []} plan={plan} />
       </div>
     </div>
   );
