@@ -7,15 +7,25 @@ import { useRouter } from "next/navigation";
 export default function PricingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleUpgrade() {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/stripe/checkout", { method: "POST" });
       const json = await res.json();
-      if (json.url) {
-        window.location.href = json.url;
+      if (res.status === 401) {
+        router.push("/auth/login");
+        return;
       }
+      if (!res.ok || !json.url) {
+        setError(json.error ?? "결제 세션 생성에 실패했습니다. 다시 시도해 주세요.");
+        return;
+      }
+      window.location.href = json.url;
+    } catch {
+      setError("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }
@@ -79,6 +89,12 @@ export default function PricingPage() {
             </button>
           </div>
         </div>
+
+        {error && (
+          <p className="rounded-2xl bg-red-50 px-4 py-3 text-center text-sm text-red-600">
+            {error}
+          </p>
+        )}
 
         <p className="text-center text-xs text-slate-400">
           언제든지 취소 가능 · Stripe으로 안전하게 결제
