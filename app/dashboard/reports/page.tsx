@@ -2,9 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "@/components/UserMenu";
-import AnalyticsDashboard from "./AnalyticsDashboard";
+import DashboardClient from "../DashboardClient";
 
-export default async function DashboardPage() {
+export default async function ReportsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
@@ -49,18 +49,18 @@ export default async function DashboardPage() {
 
         {/* 탭 네비게이션 */}
         <div className="flex rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
-          <span className="flex-1 rounded-xl bg-slate-900 py-2 text-center text-sm font-semibold text-white">
-            대시보드
-          </span>
           <Link
-            href="/dashboard/reports"
+            href="/dashboard"
             className="flex-1 rounded-xl py-2 text-center text-sm font-semibold text-slate-500 transition hover:text-slate-700"
           >
-            내역 관리
+            대시보드
           </Link>
+          <span className="flex-1 rounded-xl bg-slate-900 py-2 text-center text-sm font-semibold text-white">
+            내역 관리
+          </span>
         </div>
 
-        <AnalyticsDashboard reports={reports ?? []} />
+        <DashboardClient initialReports={reports ?? []} plan={plan} />
       </div>
     </div>
   );
