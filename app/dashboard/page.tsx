@@ -27,7 +27,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <h1 className="text-xl font-semibold text-slate-900">대시보드</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">대시보드</h1>
       <AnalyticsDashboard
         reports={reports ?? []}
         initialRows={(rows ?? []) as FinanceRow[]}

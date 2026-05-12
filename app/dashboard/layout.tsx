@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "@/components/UserMenu";
 import Sidebar from "@/components/Sidebar";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default async function DashboardLayout({
   children,
@@ -23,17 +24,18 @@ export default async function DashboardLayout({
   const customerId = sub?.stripe_customer_id ?? null;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar plan={plan} />
       <div className="flex min-w-0 flex-1 flex-col">
         {/* 상단 헤더 */}
-        <header className="flex h-14 shrink-0 items-center justify-end gap-3 border-b border-slate-200 bg-white px-6">
+        <header className="flex h-14 shrink-0 items-center justify-end gap-2 border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
           <Link
             href="/upload"
             className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             파일 업로드
           </Link>
+          <ThemeToggle />
           <UserMenu
             name={user.user_metadata?.name ?? null}
             email={user.email ?? ""}

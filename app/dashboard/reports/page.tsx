@@ -24,7 +24,7 @@ export default async function ReportsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
-      <h1 className="text-xl font-semibold text-slate-900">내역 관리</h1>
+      <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-100">내역 관리</h1>
       <DashboardClient initialReports={reports ?? []} plan={plan} />
     </div>
   );

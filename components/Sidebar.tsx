@@ -18,10 +18,10 @@ export default function Sidebar({ plan }: { plan: string }) {
   }
 
   return (
-    <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white">
+    <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       {/* 로고 */}
-      <div className="flex h-14 items-center border-b border-slate-200 px-5">
-        <span className="text-base font-bold text-slate-900">FinanceAI</span>
+      <div className="flex h-14 items-center border-b border-slate-200 px-5 dark:border-slate-800">
+        <span className="text-base font-bold text-slate-900 dark:text-slate-100">FinanceAI</span>
       </div>
 
       {/* 네비게이션 */}
@@ -34,8 +34,8 @@ export default function Sidebar({ plan }: { plan: string }) {
               href={href}
               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
                 active
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -46,15 +46,15 @@ export default function Sidebar({ plan }: { plan: string }) {
       </nav>
 
       {/* 플랜 배지 */}
-      <div className="border-t border-slate-200 p-3">
-        <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-          <p className="text-xs font-semibold text-slate-700">
+      <div className="border-t border-slate-200 p-3 dark:border-slate-800">
+        <div className="rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
             {plan === "pro" ? "Pro 플랜" : "무료 플랜"}
           </p>
           {plan !== "pro" && (
             <Link
               href="/pricing"
-              className="mt-0.5 block text-xs text-blue-600 transition hover:text-blue-700"
+              className="mt-0.5 block text-xs text-blue-600 transition hover:text-blue-500 dark:text-blue-400"
             >
               Pro 업그레이드 →
             </Link>

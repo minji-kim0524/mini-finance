@@ -52,15 +52,15 @@ export default async function ReportDashboardPage({
       <div>
         <Link
           href="/dashboard/reports"
-          className="mb-2 flex items-center gap-1 text-xs text-slate-400 transition hover:text-slate-600"
+          className="mb-2 flex items-center gap-1 text-xs text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
           </svg>
           내역 목록
         </Link>
-        <h1 className="truncate text-xl font-semibold text-slate-900">{report.name}</h1>
-        <p className="text-xs text-slate-400">{uploadDate}</p>
+        <h1 className="truncate text-xl font-semibold text-slate-900 dark:text-slate-100">{report.name}</h1>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{uploadDate}</p>
       </div>
 
       <ReportViewer rows={financeRows} reportName={report.name} otherReports={otherReports} />
