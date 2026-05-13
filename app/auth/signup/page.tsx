@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
+import { toKoreanAuthError } from "@/lib/auth-errors";
 
 type AccountType = "personal" | "business";
 
@@ -55,7 +56,7 @@ export default function SignupPage() {
       },
     });
     setLoading(false);
-    if (error) { setError(error.message); return; }
+    if (error) { setError(toKoreanAuthError(error.message)); return; }
     setSuccess(true);
   }
 
