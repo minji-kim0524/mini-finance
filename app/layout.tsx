@@ -14,8 +14,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FinanceAI",
+  title: "MINI-Finance",
   description: "재무 데이터 자동 분석 서비스",
+  icons: {
+    icon: "/finance-favicon.svg",
+  },
 };
 
 export default function RootLayout({
