@@ -30,7 +30,7 @@ export default async function DashboardLayout({
         {/* 상단 헤더 */}
         <header className="flex h-14 shrink-0 items-center justify-end gap-2 border-b border-slate-200 bg-white px-6 dark:border-slate-800 dark:bg-slate-900">
           <Link
-            href="/upload"
+            href="/dashboard/upload"
             className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             파일 업로드

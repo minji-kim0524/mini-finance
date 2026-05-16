@@ -74,7 +74,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
           <p className="text-sm font-medium text-slate-500 dark:text-slate-400">아직 업로드한 내역이 없습니다.</p>
           <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">엑셀 파일을 업로드하면 여기에 표시됩니다.</p>
           <Link
-            href="/upload"
+            href="/dashboard/upload"
             className="mt-6 rounded-2xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
             첫 파일 업로드하기

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/dashboard",         label: "대시보드",   exact: true,  icon: DashboardIcon },
   { href: "/dashboard/reports", label: "내역 관리",  exact: false, icon: ListIcon },
-  { href: "/upload",            label: "파일 업로드", exact: false, icon: UploadIcon },
+  { href: "/dashboard/upload",  label: "파일 업로드", exact: false, icon: UploadIcon },
   { href: "/pricing",           label: "요금제",     exact: false, icon: StarIcon },
 ];
 
