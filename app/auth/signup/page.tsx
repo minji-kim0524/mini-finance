@@ -9,6 +9,10 @@ type AccountType = "personal" | "business";
 
 const INPUT_CLS = "mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700";
 
+function Required() {
+  return <span className="ml-1 text-red-500">*</span>;
+}
+
 export default function SignupPage() {
   const [accountType, setAccountType] = useState<AccountType>("personal");
   const [name, setName] = useState("");
@@ -111,12 +115,12 @@ export default function SignupPage() {
           </div>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {accountType === "personal" ? "이름" : "회사명"}
+            {accountType === "personal" ? "이름" : "회사명"}<Required />
             <input type="text" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"} className={INPUT_CLS} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {accountType === "personal" ? "생년월일" : "사업자등록번호"}
+            {accountType === "personal" ? "생년월일" : <><span>사업자등록번호</span><Required /></>}
             {accountType === "personal" ? (
               <input type="date" value={identifier} onChange={(e) => setIdentifier(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} max={new Date().toISOString().slice(0, 10)} className={INPUT_CLS} />
             ) : (
@@ -125,17 +129,17 @@ export default function SignupPage() {
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            이메일
+            이메일<Required />
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="example@email.com" className={INPUT_CLS} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            비밀번호
+            비밀번호<Required />
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="6자 이상" className={INPUT_CLS} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            비밀번호 확인
+            비밀번호 확인<Required />
             <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="비밀번호 확인" className={INPUT_CLS} />
           </label>
 
