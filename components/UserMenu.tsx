@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -70,6 +71,13 @@ export default function UserMenu({ name, email, plan, hasCustomerId }: UserMenuP
             </div>
             <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">{email}</p>
           </div>
+          <Link
+            href="/dashboard/profile"
+            onClick={() => setOpen(false)}
+            className="block w-full px-4 py-2.5 text-left text-sm text-slate-600 transition hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+          >
+            프로필 설정
+          </Link>
           {plan !== "pro" && (
             <a
               href="/pricing"
