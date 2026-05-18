@@ -1,5 +1,15 @@
 export type AccountType = 'revenue' | 'cogs' | 'expense' | 'non_op_income' | 'non_op_expense' | 'asset' | 'liability' | 'equity' | 'other';
 
+export interface Report {
+  id: string;
+  name: string;
+  row_count: number;
+  total_revenue: number;
+  gross_profit: number;
+  operating_profit: number;
+  created_at: string;
+}
+
 export interface FinanceRow {
   date: string;
   account: string;

@@ -9,6 +9,7 @@ import {
 import type { FinanceRow } from "@/types/finance";
 import { groupByMonth, groupByQuarter, groupBySemiAnnual } from "@/lib/aggregator";
 import { useTheme } from "@/components/ThemeProvider";
+import { tooltipFmt } from "@/lib/format";
 
 type ChartType = "bar" | "line";
 type Period    = "monthly" | "quarterly" | "semiannual";
@@ -108,12 +109,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
               width={56}
               {...shared}
             />
-            <Tooltip
-              formatter={(value: unknown) =>
-                typeof value === "number" ? value.toLocaleString("ko-KR") + "원" : String(value)
-              }
-              contentStyle={tooltipStyle}
-            />
+            <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }} />
             {SERIES.map((s) => (
               <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} />
@@ -129,12 +125,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
               width={56}
               {...shared}
             />
-            <Tooltip
-              formatter={(value: unknown) =>
-                typeof value === "number" ? value.toLocaleString("ko-KR") + "원" : String(value)
-              }
-              contentStyle={tooltipStyle}
-            />
+            <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }} />
             {SERIES.map((s) => (
               <Line

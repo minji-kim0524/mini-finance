@@ -10,44 +10,18 @@ import {
   type PieLabelRenderProps,
 } from "recharts";
 import Link from "next/link";
-import type { FinanceRow } from "@/types/finance";
+import type { FinanceRow, Report } from "@/types/finance";
 import {
   groupByMonth, groupByQuarter, groupBySemiAnnual, groupByYear,
   buildPredictSeries,
 } from "@/lib/aggregator";
 import { useTheme } from "@/components/ThemeProvider";
-
-// ─── 타입 ─────────────────────────────────────────────────────────
-
-interface Report {
-  id: string;
-  name: string;
-  row_count: number;
-  total_revenue: number;
-  gross_profit: number;
-  operating_profit: number;
-  created_at: string;
-}
+import { formatKRW, formatDate, tooltipFmt } from "@/lib/format";
 
 type ChartTab  = "bar" | "predict" | "pie";
 type BarPeriod = "monthly" | "quarterly" | "semiannual" | "yearly";
 
 const PIE_COLORS = ["#3b82f6","#34d399","#f87171","#fb923c","#a78bfa","#f472b6","#facc15","#38bdf8","#4ade80","#f97316"];
-
-function formatKRW(n: number) {
-  const abs = Math.abs(n);
-  if (abs >= 100_000_000) return `${(n / 100_000_000).toFixed(1)}억원`;
-  if (abs >= 10_000)      return `${Math.round(n / 10_000).toLocaleString("ko-KR")}만원`;
-  return n.toLocaleString("ko-KR") + "원";
-}
-
-function tooltipFmt(v: unknown) {
-  return typeof v === "number" ? v.toLocaleString("ko-KR") + "원" : String(v);
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
-}
 
 function renderPieLabel(props: PieLabelRenderProps) {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
@@ -87,7 +61,6 @@ export default function AnalyticsDashboard({
   const [chartTab, setChartTab]     = useState<ChartTab>("bar");
   const [barPeriod, setBarPeriod]   = useState<BarPeriod>("monthly");
 
-  // 차트 공통 스타일 (다크/라이트 분기)
   const gridColor   = isDark ? "#1e293b" : "#f1f5f9";
   const tickColor   = isDark ? "#64748b" : "#94a3b8";
   const tooltipStyle = isDark
@@ -107,8 +80,6 @@ export default function AnalyticsDashboard({
       setLoading(false);
     }
   }
-
-  // ── 집계 ──────────────────────────────────────────────────────────
 
   const plRows = useMemo(
     () => rows.filter((r) => ["revenue","cogs","expense","non_op_income","non_op_expense"].includes(r.type)),
@@ -134,8 +105,6 @@ export default function AnalyticsDashboard({
       .map(([name, value]) => ({ name, value }))
       .sort((a, b) => b.value - a.value);
   }, [plRows]);
-
-  // ── 통계 카드 ────────────────────────────────────────────────────
 
   const totalRevenue = reports.reduce((s, r) => s + r.total_revenue, 0);
   const totalOp      = reports.reduce((s, r) => s + r.operating_profit, 0);
@@ -164,7 +133,6 @@ export default function AnalyticsDashboard({
 
   return (
     <div className="space-y-5">
-      {/* 통계 카드 */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((s) => (
           <div key={s.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -175,9 +143,7 @@ export default function AnalyticsDashboard({
         ))}
       </div>
 
-      {/* 차트 섹션 */}
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        {/* 차트 헤더 */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-4 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">재무 분석</h2>
@@ -199,7 +165,6 @@ export default function AnalyticsDashboard({
             )}
           </div>
 
-          {/* 차트 타입 탭 */}
           <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
             {([
               { value: "bar",     label: "막대그래프" },
@@ -229,7 +194,6 @@ export default function AnalyticsDashboard({
             </div>
           ) : (
             <>
-              {/* ── 막대그래프 ────────────────────────────────────── */}
               {chartTab === "bar" && (
                 <>
                   <div className="mb-5 flex items-center justify-between">
@@ -277,7 +241,6 @@ export default function AnalyticsDashboard({
                 </>
               )}
 
-              {/* ── 꺾은선 + 예측 ─────────────────────────────────── */}
               {chartTab === "predict" && (
                 <>
                   <div className="mb-5 flex items-center justify-between">
@@ -316,7 +279,6 @@ export default function AnalyticsDashboard({
                 </>
               )}
 
-              {/* ── 원형그래프 ────────────────────────────────────── */}
               {chartTab === "pie" && (
                 <>
                   <div className="mb-5">
@@ -372,7 +334,6 @@ export default function AnalyticsDashboard({
         </div>
       </div>
 
-      {/* 최근 리포트 */}
       <div className="rounded-3xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center justify-between px-5 pt-5">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">최근 리포트</h2>

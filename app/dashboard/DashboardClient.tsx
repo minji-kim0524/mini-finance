@@ -2,28 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-
-interface Report {
-  id: string;
-  name: string;
-  row_count: number;
-  total_revenue: number;
-  gross_profit: number;
-  operating_profit: number;
-  created_at: string;
-}
-
-function formatKRW(n: number) {
-  return n.toLocaleString("ko-KR") + "원";
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+import type { Report } from "@/types/finance";
+import { formatKRW, formatDate } from "@/lib/format";
 
 export default function DashboardClient({ initialReports, plan }: { initialReports: Report[]; plan: string }) {
   const [reports, setReports] = useState<Report[]>(initialReports);
