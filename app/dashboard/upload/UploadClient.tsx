@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import type { PLSummary } from "@/types/finance";
+import { formatKRW } from "@/lib/format";
 
 type UploadState =
   | { status: "idle" }
@@ -19,10 +20,6 @@ const SUMMARY_LABELS: { key: keyof PLSummary; label: string }[] = [
   { key: "totalExpense",    label: "판관비" },
   { key: "operatingProfit", label: "영업이익" },
 ];
-
-function formatKRW(n: number) {
-  return n.toLocaleString("ko-KR") + "원";
-}
 
 export default function UploadClient() {
   const inputRef = useRef<HTMLInputElement>(null);

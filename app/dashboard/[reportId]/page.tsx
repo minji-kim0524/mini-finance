@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { FinanceRow } from "@/types/finance";
 import ReportViewer from "./ReportViewer";
+import { formatDate } from "@/lib/format";
 
 export default async function ReportDashboardPage({
   params,
@@ -41,11 +42,7 @@ export default async function ReportDashboardPage({
   const financeRows = (rows ?? []) as FinanceRow[];
   const otherReports = (allReports ?? []) as { id: string; name: string; created_at: string }[];
 
-  const uploadDate = new Date(report.created_at).toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const uploadDate = formatDate(report.created_at);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

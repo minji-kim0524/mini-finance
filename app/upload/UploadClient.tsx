@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import type { PLSummary } from "@/types/finance";
 import UserMenu from "@/components/UserMenu";
 import ThemeToggle from "@/components/ThemeToggle";
+import { formatKRW } from "@/lib/format";
 
 type UploadState =
   | { status: "idle" }
@@ -21,10 +22,6 @@ const SUMMARY_LABELS: { key: keyof PLSummary; label: string }[] = [
   { key: "totalExpense",    label: "판관비" },
   { key: "operatingProfit", label: "영업이익" },
 ];
-
-function formatKRW(n: number) {
-  return n.toLocaleString("ko-KR") + "원";
-}
 
 interface UploadClientProps {
   userName: string | null;
