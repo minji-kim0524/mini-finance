@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { CreateClient } from "@/lib/supabase/server";
+import { GetStripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -18,7 +18,7 @@ export async function POST() {
 
   // 신규 고객 생성
   if (!customerId) {
-    const customer = await getStripe().customers.create({
+    const customer = await GetStripe().customers.create({
       email: user.email,
       metadata: { user_id: user.id },
     });
@@ -27,7 +27,7 @@ export async function POST() {
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mini-finance-one.vercel.app";
 
-  const session = await getStripe().checkout.sessions.create({
+  const session = await GetStripe().checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
     line_items: [{ price: process.env.STRIPE_PRO_PRICE_ID!, quantity: 1 }],

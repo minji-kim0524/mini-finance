@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import * as XLSX from "xlsx";
 import type { PLSummary } from "@/types/finance";
-import { formatKRW } from "@/lib/format";
+import { FormatKRW } from "@/lib/format";
 
 type UploadState =
   | { status: "idle" }
@@ -13,7 +13,7 @@ type UploadState =
   | { status: "error"; message: string }
   | { status: "limit" };
 
-const SUMMARY_LABELS: { key: keyof PLSummary; label: string }[] = [
+const summaryLabels: { key: keyof PLSummary; label: string }[] = [
   { key: "totalRevenue",    label: "총 매출" },
   { key: "totalCogs",       label: "매출원가" },
   { key: "grossProfit",     label: "매출총이익" },
@@ -27,10 +27,10 @@ export default function UploadClient() {
   const [dragging, setDragging] = useState(false);
   const [state, setState]     = useState<UploadState>({ status: "idle" });
 
-  function handleFile(f: File) { setFile(f); setState({ status: "idle" }); }
-  function handleDrop(e: React.DragEvent) { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }
+  function HandleFile(f: File) { setFile(f); setState({ status: "idle" }); }
+  function HandleDrop(e: React.DragEvent) { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) HandleFile(f); }
 
-  async function handleUpload() {
+  async function HandleUpload() {
     if (!file) return;
     setState({ status: "loading" });
     const formData = new FormData();
@@ -64,7 +64,7 @@ export default function UploadClient() {
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
+          onDrop={HandleDrop}
           className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 transition ${
             dragging
               ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
@@ -80,12 +80,12 @@ export default function UploadClient() {
             </p>
           )}
           <p className="text-xs text-slate-400 dark:text-slate-500">.xlsx, .xls 지원</p>
-          <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
+          <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) HandleFile(f); }} />
         </div>
 
         <button
           type="button"
-          onClick={handleUpload}
+          onClick={HandleUpload}
           disabled={!file || state.status === "loading"}
           className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
         >
@@ -115,11 +115,11 @@ export default function UploadClient() {
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h2 className="mb-4 text-base font-semibold text-slate-800 dark:text-slate-200">분석 완료</h2>
               <dl className="space-y-2">
-                {SUMMARY_LABELS.map(({ key, label }) => (
+                {summaryLabels.map(({ key, label }) => (
                   <div key={key} className="flex justify-between text-sm">
                     <dt className="text-slate-500 dark:text-slate-400">{label}</dt>
                     <dd className={`font-semibold ${state.summary[key] < 0 ? "text-red-500" : "text-slate-900 dark:text-slate-100"}`}>
-                      {formatKRW(state.summary[key])}
+                      {FormatKRW(state.summary[key])}
                     </dd>
                   </div>
                 ))}
@@ -138,7 +138,7 @@ export default function UploadClient() {
   );
 }
 
-function downloadSample() {
+function DownloadSample() {
   const data = [
     ["날짜", "계정과목", "금액"],
     ["2024-01-05", "상품매출", 8000000],
@@ -159,7 +159,7 @@ function downloadSample() {
   XLSX.writeFile(wb, "거래내역_샘플.xlsx");
 }
 
-const SAMPLE_ROWS = [
+const sampleRows = [
   { date: "2024-01-05", account: "상품매출",  amount: "8,000,000" },
   { date: "2024-01-10", account: "매출원가",  amount: "3,500,000" },
   { date: "2024-01-15", account: "급여",      amount: "2,000,000" },
@@ -178,7 +178,7 @@ function FormatGuide() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </button>
-        <button type="button" onClick={downloadSample} className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30">
+        <button type="button" onClick={DownloadSample} className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
           </svg>
@@ -216,7 +216,7 @@ function FormatGuide() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {SAMPLE_ROWS.map((row, i) => (
+                  {sampleRows.map((row, i) => (
                     <tr key={i} className="text-slate-500 dark:text-slate-400">
                       <td className="px-3 py-1.5">{row.date}</td>
                       <td className="px-3 py-1.5">{row.account}</td>

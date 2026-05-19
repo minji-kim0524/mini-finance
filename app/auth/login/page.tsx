@@ -2,9 +2,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { CreateClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
-import { toKoreanAuthError } from "@/lib/authErrors";
+import { ToKoreanAuthError } from "@/lib/authErrors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -12,16 +12,16 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = CreateClient();
 
-  async function handleLogin() {
+  async function HandleLogin() {
     setError("");
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setError(toKoreanAuthError(error.message));
+      setError(ToKoreanAuthError(error.message));
       setLoading(false);
       return;
     }
@@ -47,7 +47,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleLogin(); }}
               placeholder="example@email.com"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700"
             />
@@ -59,7 +59,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleLogin(); }}
               placeholder="비밀번호"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700"
             />
@@ -75,7 +75,7 @@ export default function LoginPage() {
 
           <button
             type="button"
-            onClick={handleLogin}
+            onClick={HandleLogin}
             disabled={loading}
             className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >

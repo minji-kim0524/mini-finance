@@ -1,8 +1,8 @@
 import { type NextRequest } from "next/server";
-import { updateSession } from "@/lib/supabase/middleware";
+import { UpdateSession } from "@/lib/supabase/middleware";
 
-export async function proxy(request: NextRequest) {
-  return await updateSession(request);
+export async function Proxy(request: NextRequest) {
+  return await UpdateSession(request);
 }
 
 export const config = {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const NAV_ITEMS = [
+const navItems = [
   { href: "/dashboard",         label: "대시보드",   exact: true,  icon: DashboardIcon },
   { href: "/dashboard/reports", label: "내역 관리",  exact: false, icon: ListIcon },
   { href: "/dashboard/upload",  label: "파일 업로드", exact: false, icon: UploadIcon },
@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 export default function Sidebar({ plan }: { plan: string }) {
   const pathname = usePathname();
 
-  function isActive(href: string, exact: boolean) {
+  function IsActive(href: string, exact: boolean) {
     return exact ? pathname === href : pathname.startsWith(href);
   }
 
@@ -26,8 +26,8 @@ export default function Sidebar({ plan }: { plan: string }) {
 
       {/* 네비게이션 */}
       <nav className="flex-1 space-y-0.5 p-3 pt-4">
-        {NAV_ITEMS.map(({ href, label, exact, icon: Icon }) => {
-          const active = isActive(href, exact);
+        {navItems.map(({ href, label, exact, icon: Icon }) => {
+          const active = IsActive(href, exact);
           return (
             <Link
               key={href}

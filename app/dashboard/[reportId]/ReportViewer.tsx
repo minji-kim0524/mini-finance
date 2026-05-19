@@ -5,23 +5,23 @@ import { useReactToPrint } from "react-to-print";
 import * as XLSX from "xlsx";
 import { useParams } from "next/navigation";
 import type { FinanceRow, AccountType, PLSummary } from "@/types/finance";
-import { calcPLSummary } from "@/lib/aggregator";
+import { CalcPLSummary } from "@/lib/aggregator";
 import MonthlyChart from "../MonthlyChart";
 
 type Tab = "dashboard" | "income" | "balance" | "classify";
 
 // 금액 표시: 음수는 괄호, 0은 대시, 원 단위
-function fmtNum(n: number): string {
+function FmtNum(n: number): string {
   if (n === 0) return "-";
   const abs = Math.abs(n).toLocaleString("ko-KR");
   return n < 0 ? `(${abs})` : abs;
 }
 
-function formatKRW(n: number) {
+function FormatKRW(n: number) {
   return n.toLocaleString("ko-KR") + "원";
 }
 
-function groupByAccount(rows: FinanceRow[]): Map<string, number> {
+function GroupByAccount(rows: FinanceRow[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const row of rows) {
     map.set(row.account, (map.get(row.account) ?? 0) + row.amount);
@@ -29,7 +29,7 @@ function groupByAccount(rows: FinanceRow[]): Map<string, number> {
   return map;
 }
 
-function sum(map: Map<string, number>): number {
+function Sum(map: Map<string, number>): number {
   return Array.from(map.values()).reduce((s, v) => s + v, 0);
 }
 
@@ -62,11 +62,11 @@ function SectionRow({ roman, label, total, compareTotal, highlight }: { roman: s
       </td>
       <td className="py-2.5 pr-3" />
       <td className={`py-2.5 text-right text-sm ${hasCompare ? "pr-3" : "pr-5"} ${highlight ? "font-bold" : "font-semibold"} ${total < 0 ? "text-red-500" : highlight ? "text-blue-600" : "text-slate-900"}`}>
-        {fmtNum(total)}
+        {FmtNum(total)}
       </td>
       {hasCompare && (
         <td className={`py-2.5 pr-5 text-right text-sm ${highlight ? "font-bold" : "font-semibold"} ${compareTotal < 0 ? "text-red-300" : "text-blue-300"}`}>
-          {fmtNum(compareTotal)}
+          {FmtNum(compareTotal)}
         </td>
       )}
     </tr>
@@ -81,11 +81,11 @@ function SubtotalRow({ label, value, compareValue, bold }: { label: string; valu
       <td className={`py-2.5 pl-5 text-sm ${bold ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{label}</td>
       <td className="py-2.5 pr-3" />
       <td className={`py-2.5 text-right text-sm ${hasCompare ? "pr-3" : "pr-5"} ${bold ? "font-bold" : "font-semibold"} ${value < 0 ? "text-red-500" : "text-blue-600"}`}>
-        {fmtNum(value)}
+        {FmtNum(value)}
       </td>
       {hasCompare && (
         <td className={`py-2.5 pr-5 text-right text-sm ${bold ? "font-bold" : "font-semibold"} ${compareValue < 0 ? "text-red-300" : "text-blue-300"}`}>
-          {fmtNum(compareValue)}
+          {FmtNum(compareValue)}
         </td>
       )}
     </tr>
@@ -98,10 +98,10 @@ function AccountRow({ account, amount, compareAmount, indent = 1 }: { account: s
   return (
     <tr className="border-t border-slate-50 hover:bg-slate-50/60">
       <td className={`py-1.5 text-xs text-slate-500 ${indent === 2 ? "pl-14" : "pl-9"}`}>{account}</td>
-      <td className={`py-1.5 text-right text-xs text-slate-500 ${hasCompare ? "pr-3" : "pr-3"}`}>{fmtNum(amount)}</td>
+      <td className={`py-1.5 text-right text-xs text-slate-500 ${hasCompare ? "pr-3" : "pr-3"}`}>{FmtNum(amount)}</td>
       <td className={`py-1.5 ${hasCompare ? "pr-3" : "pr-5"}`} />
       {hasCompare && (
-        <td className="py-1.5 pr-5 text-right text-xs text-blue-300">{fmtNum(compareAmount)}</td>
+        <td className="py-1.5 pr-5 text-right text-xs text-blue-300">{FmtNum(compareAmount)}</td>
       )}
     </tr>
   );
@@ -120,7 +120,7 @@ function CategoryRow({ label, colSpan = 3 }: { label: string; colSpan?: number }
 
 // ─── 대시보드 뷰 ────────────────────────────────────────────────
 
-const SUMMARY_LABELS: { key: keyof PLSummary; label: string; type?: AccountType; separator?: boolean }[] = [
+const summaryLabels: { key: keyof PLSummary; label: string; type?: AccountType; separator?: boolean }[] = [
   { key: "totalRevenue",     label: "총 매출",     type: "revenue" },
   { key: "totalCogs",        label: "매출원가",    type: "cogs" },
   { key: "grossProfit",      label: "매출총이익",  separator: true },
@@ -131,11 +131,11 @@ const SUMMARY_LABELS: { key: keyof PLSummary; label: string; type?: AccountType;
   { key: "netIncome",        label: "당기순이익",  separator: true },
 ];
 
-const PL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense"];
+const plTypes: AccountType[] =["revenue", "cogs", "expense", "non_op_income", "non_op_expense"];
 
 function DashboardView({ rows }: { rows: FinanceRow[] }) {
-  const plRows = rows.filter(r => PL_TYPES.includes(r.type));
-  const summary = plRows.length > 0 ? calcPLSummary(plRows) : null;
+  const plRows = rows.filter(r => plTypes.includes(r.type));
+  const summary = plRows.length > 0 ? CalcPLSummary(plRows) : null;
 
   const breakdown = useMemo(() => {
     const map = new Map<AccountType, Map<string, number>>();
@@ -148,7 +148,7 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
   }, [rows]);
 
   const otherRows = rows.filter(r => r.type === "other");
-  const otherBreakdown = useMemo(() => groupByAccount(otherRows), [rows]);
+  const otherBreakdown = useMemo(() => GroupByAccount(otherRows), [rows]);
 
   return (
     <div className="space-y-4">
@@ -161,13 +161,13 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
               <span className="text-sm font-normal text-slate-400">({plRows.length}건)</span>
             </h2>
             <dl className="space-y-2">
-              {SUMMARY_LABELS.map(({ key, label, type, separator }) => (
+              {summaryLabels.map(({ key, label, type, separator }) => (
                 <div key={key}>
                   {separator && <div className="my-3 border-t border-slate-100" />}
                   <div className="flex justify-between text-sm">
                     <dt className={type ? "text-slate-500" : "font-medium text-slate-700"}>{label}</dt>
                     <dd className={`font-semibold ${summary[key] < 0 ? "text-red-500" : "text-slate-900"}`}>
-                      {formatKRW(summary[key])}
+                      {FormatKRW(summary[key])}
                     </dd>
                   </div>
                   {type && breakdown.get(type) && (
@@ -175,7 +175,7 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
                       {Array.from(breakdown.get(type)!.entries()).map(([account, amount]) => (
                         <div key={account} className="flex justify-between text-xs">
                           <span className="text-slate-400">{account}</span>
-                          <span className="text-slate-400">{formatKRW(amount)}</span>
+                          <span className="text-slate-400">{FormatKRW(amount)}</span>
                         </div>
                       ))}
                     </div>
@@ -192,7 +192,7 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
                 {Array.from(otherBreakdown.entries()).map(([account, amount]) => (
                   <div key={account} className="flex justify-between text-sm">
                     <span className="text-amber-700">{account}</span>
-                    <span className="font-medium text-amber-800">{formatKRW(amount)}</span>
+                    <span className="font-medium text-amber-800">{FormatKRW(amount)}</span>
                   </div>
                 ))}
               </div>
@@ -209,40 +209,40 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
 // ─── 손익계산서 뷰 ───────────────────────────────────────────────
 
 function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
-  const revenue    = useMemo(() => groupByAccount(rows.filter(r => r.type === "revenue")),        [rows]);
-  const cogs       = useMemo(() => groupByAccount(rows.filter(r => r.type === "cogs")),           [rows]);
-  const expenses   = useMemo(() => groupByAccount(rows.filter(r => r.type === "expense")),        [rows]);
-  const nonOpInc   = useMemo(() => groupByAccount(rows.filter(r => r.type === "non_op_income")),  [rows]);
-  const nonOpExp   = useMemo(() => groupByAccount(rows.filter(r => r.type === "non_op_expense")), [rows]);
+  const revenue    = useMemo(() => GroupByAccount(rows.filter(r => r.type === "revenue")),        [rows]);
+  const cogs       = useMemo(() => GroupByAccount(rows.filter(r => r.type === "cogs")),           [rows]);
+  const expenses   = useMemo(() => GroupByAccount(rows.filter(r => r.type === "expense")),        [rows]);
+  const nonOpInc   = useMemo(() => GroupByAccount(rows.filter(r => r.type === "non_op_income")),  [rows]);
+  const nonOpExp   = useMemo(() => GroupByAccount(rows.filter(r => r.type === "non_op_expense")), [rows]);
 
-  const cRevenue  = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "revenue"))        : null, [compareRows]);
-  const cCogs     = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "cogs"))           : null, [compareRows]);
-  const cExpenses = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "expense"))        : null, [compareRows]);
-  const cNonOpInc = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "non_op_income"))  : null, [compareRows]);
-  const cNonOpExp = useMemo(() => compareRows ? groupByAccount(compareRows.filter(r => r.type === "non_op_expense")) : null, [compareRows]);
+  const cRevenue  = useMemo(() => compareRows ? GroupByAccount(compareRows.filter(r => r.type === "revenue"))        : null, [compareRows]);
+  const cCogs     = useMemo(() => compareRows ? GroupByAccount(compareRows.filter(r => r.type === "cogs"))           : null, [compareRows]);
+  const cExpenses = useMemo(() => compareRows ? GroupByAccount(compareRows.filter(r => r.type === "expense"))        : null, [compareRows]);
+  const cNonOpInc = useMemo(() => compareRows ? GroupByAccount(compareRows.filter(r => r.type === "non_op_income"))  : null, [compareRows]);
+  const cNonOpExp = useMemo(() => compareRows ? GroupByAccount(compareRows.filter(r => r.type === "non_op_expense")) : null, [compareRows]);
 
-  const totalRevenue    = sum(revenue);
-  const totalCogs       = sum(cogs);
+  const totalRevenue    = Sum(revenue);
+  const totalCogs       = Sum(cogs);
   const grossProfit     = totalRevenue - totalCogs;
-  const totalExpense    = sum(expenses);
+  const totalExpense    = Sum(expenses);
   const operatingProfit = grossProfit - totalExpense;
-  const totalNonOpInc   = sum(nonOpInc);
-  const totalNonOpExp   = sum(nonOpExp);
+  const totalNonOpInc   = Sum(nonOpInc);
+  const totalNonOpExp   = Sum(nonOpExp);
   const netIncome       = operatingProfit + totalNonOpInc - totalNonOpExp;
 
-  const cTotalRevenue    = cRevenue  ? sum(cRevenue)  : undefined;
-  const cTotalCogs       = cCogs     ? sum(cCogs)     : undefined;
+  const cTotalRevenue    = cRevenue  ? Sum(cRevenue)  : undefined;
+  const cTotalCogs       = cCogs     ? Sum(cCogs)     : undefined;
   const cGrossProfit     = cTotalRevenue !== undefined && cTotalCogs !== undefined ? cTotalRevenue - cTotalCogs : undefined;
-  const cTotalExpense    = cExpenses  ? sum(cExpenses) : undefined;
+  const cTotalExpense    = cExpenses  ? Sum(cExpenses) : undefined;
   const cOperatingProfit = cGrossProfit !== undefined && cTotalExpense !== undefined ? cGrossProfit - cTotalExpense : undefined;
-  const cTotalNonOpInc   = cNonOpInc ? sum(cNonOpInc) : undefined;
-  const cTotalNonOpExp   = cNonOpExp ? sum(cNonOpExp) : undefined;
+  const cTotalNonOpInc   = cNonOpInc ? Sum(cNonOpInc) : undefined;
+  const cTotalNonOpExp   = cNonOpExp ? Sum(cNonOpExp) : undefined;
   const cNetIncome       = cOperatingProfit !== undefined && cTotalNonOpInc !== undefined && cTotalNonOpExp !== undefined
     ? cOperatingProfit + cTotalNonOpInc - cTotalNonOpExp : undefined;
 
   const compare = !!compareRows;
 
-  function cAmt(map: Map<string, number> | null, account: string): number | undefined {
+  function CAmt(map: Map<string, number> | null, account: string): number | undefined {
     return map ? (map.get(account) ?? 0) : undefined;
   }
 
@@ -263,7 +263,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
             {/* I. 매출액 */}
             <SectionRow roman="I." label="매출액" total={totalRevenue} compareTotal={cTotalRevenue} />
             {Array.from(revenue.entries()).map(([account, amount]) => (
-              <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cRevenue, account)} />
+              <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cRevenue, account)} />
             ))}
 
             {/* II. 매출원가 */}
@@ -271,7 +271,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
               <>
                 <SectionRow roman="II." label="매출원가" total={totalCogs} compareTotal={cTotalCogs} />
                 {Array.from(cogs.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCogs, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cCogs, account)} />
                 ))}
               </>
             )}
@@ -284,7 +284,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
               <>
                 <SectionRow roman="IV." label="판매비와관리비" total={totalExpense} compareTotal={cTotalExpense} />
                 {Array.from(expenses.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cExpenses, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cExpenses, account)} />
                 ))}
               </>
             )}
@@ -297,7 +297,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
               <>
                 <SectionRow roman="VI." label="영업외수익" total={totalNonOpInc} compareTotal={cTotalNonOpInc} />
                 {Array.from(nonOpInc.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonOpInc, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cNonOpInc, account)} />
                 ))}
               </>
             )}
@@ -307,7 +307,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
               <>
                 <SectionRow roman="VII." label="영업외비용" total={totalNonOpExp} compareTotal={cTotalNonOpExp} />
                 {Array.from(nonOpExp.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonOpExp, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cNonOpExp, account)} />
                 ))}
               </>
             )}
@@ -323,11 +323,11 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
 
 // ─── 재무상태표 뷰 ───────────────────────────────────────────────
 
-const CURRENT_ASSET_KW     = ['현금','보통예금','당좌예금','정기예금','정기적금','외화예금','매출채권','받을어음','외상매출금','미수금','미수수익','선급금','선급비용','단기대여금','재고자산','재공품','저장품'];
-const CURRENT_LIABILITY_KW = ['매입채무','지급어음','외상매입금','미지급금','미지급비용','선수금','예수금','부가세예수금','단기차입금','유동성장기부채'];
+const currentAssetKw = ['현금','보통예금','당좌예금','정기예금','정기적금','외화예금','매출채권','받을어음','외상매출금','미수금','미수수익','선급금','선급비용','단기대여금','재고자산','재공품','저장품'];
+const currentLiabilityKw = ['매입채무','지급어음','외상매입금','미지급금','미지급비용','선수금','예수금','부가세예수금','단기차입금','유동성장기부채'];
 
-function subClassify(account: string, type: 'asset' | 'liability'): 'current' | 'non_current' {
-  const kws = type === 'asset' ? CURRENT_ASSET_KW : CURRENT_LIABILITY_KW;
+function SubClassify(account: string, type: 'asset' | 'liability'): 'current' | 'non_current' {
+  const kws = type === 'asset' ? currentAssetKw : currentLiabilityKw;
   return kws.some(kw => account.includes(kw)) ? 'current' : 'non_current';
 }
 
@@ -338,19 +338,19 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
 
   if (assets.length === 0 && liabilities.length === 0 && equity.length === 0) return <EmptyState />;
 
-  const currentAssets    = groupByAccount(assets.filter(r => subClassify(r.account, 'asset') === 'current'));
-  const nonCurrentAssets = groupByAccount(assets.filter(r => subClassify(r.account, 'asset') === 'non_current'));
-  const currentLiab      = groupByAccount(liabilities.filter(r => subClassify(r.account, 'liability') === 'current'));
-  const nonCurrentLiab   = groupByAccount(liabilities.filter(r => subClassify(r.account, 'liability') === 'non_current'));
-  const equityAccounts   = groupByAccount(equity);
+  const currentAssets    = GroupByAccount(assets.filter(r => SubClassify(r.account, 'asset') === 'current'));
+  const nonCurrentAssets = GroupByAccount(assets.filter(r => SubClassify(r.account, 'asset') === 'non_current'));
+  const currentLiab      = GroupByAccount(liabilities.filter(r => SubClassify(r.account, 'liability') === 'current'));
+  const nonCurrentLiab   = GroupByAccount(liabilities.filter(r => SubClassify(r.account, 'liability') === 'non_current'));
+  const equityAccounts   = GroupByAccount(equity);
 
-  const totalCurrentAssets    = sum(currentAssets);
-  const totalNonCurrentAssets = sum(nonCurrentAssets);
+  const totalCurrentAssets    = Sum(currentAssets);
+  const totalNonCurrentAssets = Sum(nonCurrentAssets);
   const totalAssets           = totalCurrentAssets + totalNonCurrentAssets;
-  const totalCurrentLiab      = sum(currentLiab);
-  const totalNonCurrentLiab   = sum(nonCurrentLiab);
+  const totalCurrentLiab      = Sum(currentLiab);
+  const totalNonCurrentLiab   = Sum(nonCurrentLiab);
   const totalLiabilities      = totalCurrentLiab + totalNonCurrentLiab;
-  const totalEquity           = sum(equityAccounts);
+  const totalEquity           = Sum(equityAccounts);
   const totalLiabAndEquity    = totalLiabilities + totalEquity;
 
   // 전기 데이터
@@ -358,25 +358,25 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
   const cLiabilities = compareRows ? compareRows.filter(r => r.type === "liability")  : null;
   const cEquity      = compareRows ? compareRows.filter(r => r.type === "equity")     : null;
 
-  const cCurrentAssets    = cAssets      ? groupByAccount(cAssets.filter(r => subClassify(r.account, 'asset') === 'current'))          : null;
-  const cNonCurrentAssets = cAssets      ? groupByAccount(cAssets.filter(r => subClassify(r.account, 'asset') === 'non_current'))      : null;
-  const cCurrentLiab      = cLiabilities ? groupByAccount(cLiabilities.filter(r => subClassify(r.account, 'liability') === 'current')) : null;
-  const cNonCurrentLiab   = cLiabilities ? groupByAccount(cLiabilities.filter(r => subClassify(r.account, 'liability') === 'non_current')) : null;
-  const cEquityAccounts   = cEquity      ? groupByAccount(cEquity)                                                                      : null;
+  const cCurrentAssets    = cAssets      ? GroupByAccount(cAssets.filter(r => SubClassify(r.account, 'asset') === 'current'))          : null;
+  const cNonCurrentAssets = cAssets      ? GroupByAccount(cAssets.filter(r => SubClassify(r.account, 'asset') === 'non_current'))      : null;
+  const cCurrentLiab      = cLiabilities ? GroupByAccount(cLiabilities.filter(r => SubClassify(r.account, 'liability') === 'current')) : null;
+  const cNonCurrentLiab   = cLiabilities ? GroupByAccount(cLiabilities.filter(r => SubClassify(r.account, 'liability') === 'non_current')) : null;
+  const cEquityAccounts   = cEquity      ? GroupByAccount(cEquity)                                                                      : null;
 
-  const cTotalCurrentAssets    = cCurrentAssets    ? sum(cCurrentAssets)    : undefined;
-  const cTotalNonCurrentAssets = cNonCurrentAssets ? sum(cNonCurrentAssets) : undefined;
+  const cTotalCurrentAssets    = cCurrentAssets    ? Sum(cCurrentAssets)    : undefined;
+  const cTotalNonCurrentAssets = cNonCurrentAssets ? Sum(cNonCurrentAssets) : undefined;
   const cTotalAssets           = cTotalCurrentAssets !== undefined && cTotalNonCurrentAssets !== undefined ? cTotalCurrentAssets + cTotalNonCurrentAssets : undefined;
-  const cTotalCurrentLiab      = cCurrentLiab      ? sum(cCurrentLiab)      : undefined;
-  const cTotalNonCurrentLiab   = cNonCurrentLiab   ? sum(cNonCurrentLiab)   : undefined;
+  const cTotalCurrentLiab      = cCurrentLiab      ? Sum(cCurrentLiab)      : undefined;
+  const cTotalNonCurrentLiab   = cNonCurrentLiab   ? Sum(cNonCurrentLiab)   : undefined;
   const cTotalLiabilities      = cTotalCurrentLiab !== undefined && cTotalNonCurrentLiab !== undefined ? cTotalCurrentLiab + cTotalNonCurrentLiab : undefined;
-  const cTotalEquity           = cEquityAccounts   ? sum(cEquityAccounts)   : undefined;
+  const cTotalEquity           = cEquityAccounts   ? Sum(cEquityAccounts)   : undefined;
   const cTotalLiabAndEquity    = cTotalLiabilities !== undefined && cTotalEquity !== undefined ? cTotalLiabilities + cTotalEquity : undefined;
 
   const compare = !!compareRows;
   const colSpan = compare ? 4 : 3;
 
-  function cAmt(map: Map<string, number> | null, account: string): number | undefined {
+  function CAmt(map: Map<string, number> | null, account: string): number | undefined {
     return map ? (map.get(account) ?? 0) : undefined;
   }
 
@@ -397,7 +397,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
               <>
                 <SectionRow roman="I." label="유동자산" total={totalCurrentAssets} compareTotal={cTotalCurrentAssets} />
                 {Array.from(currentAssets.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCurrentAssets, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cCurrentAssets, account)} />
                 ))}
               </>
             )}
@@ -406,7 +406,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
               <>
                 <SectionRow roman="II." label="비유동자산" total={totalNonCurrentAssets} compareTotal={cTotalNonCurrentAssets} />
                 {Array.from(nonCurrentAssets.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonCurrentAssets, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cNonCurrentAssets, account)} />
                 ))}
               </>
             )}
@@ -420,7 +420,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
               <>
                 <SectionRow roman="I." label="유동부채" total={totalCurrentLiab} compareTotal={cTotalCurrentLiab} />
                 {Array.from(currentLiab.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cCurrentLiab, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cCurrentLiab, account)} />
                 ))}
               </>
             )}
@@ -429,7 +429,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
               <>
                 <SectionRow roman="II." label="비유동부채" total={totalNonCurrentLiab} compareTotal={cTotalNonCurrentLiab} />
                 {Array.from(nonCurrentLiab.entries()).map(([account, amount]) => (
-                  <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cNonCurrentLiab, account)} />
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cNonCurrentLiab, account)} />
                 ))}
               </>
             )}
@@ -440,7 +440,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
             <CategoryRow label="자  본" colSpan={colSpan} />
 
             {Array.from(equityAccounts.entries()).map(([account, amount]) => (
-              <AccountRow key={account} account={account} amount={amount} compareAmount={cAmt(cEquityAccounts, account)} />
+              <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cEquityAccounts, account)} />
             ))}
 
             <SubtotalRow label="자본 총계" value={totalEquity} compareValue={cTotalEquity} bold />
@@ -449,9 +449,9 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
             <tr className="border-t-2 border-slate-800 bg-slate-900">
               <td className="py-3 pl-5 text-sm font-bold text-white">부채 및 자본 총계</td>
               <td className="py-3 pr-3" />
-              <td className={`py-3 text-right text-sm font-bold text-white ${compare ? "pr-3" : "pr-5"}`}>{fmtNum(totalLiabAndEquity)}</td>
+              <td className={`py-3 text-right text-sm font-bold text-white ${compare ? "pr-3" : "pr-5"}`}>{FmtNum(totalLiabAndEquity)}</td>
               {compare && (
-                <td className="py-3 pr-5 text-right text-sm font-bold text-blue-300">{cTotalLiabAndEquity !== undefined ? fmtNum(cTotalLiabAndEquity) : "-"}</td>
+                <td className="py-3 pr-5 text-right text-sm font-bold text-blue-300">{cTotalLiabAndEquity !== undefined ? FmtNum(cTotalLiabAndEquity) : "-"}</td>
               )}
             </tr>
           </tbody>
@@ -473,7 +473,7 @@ function EmptyState() {
 
 // ─── 계정 분류 뷰 ────────────────────────────────────────────────
 
-const TYPE_LABELS: Record<AccountType, string> = {
+const typeLabels: Record<AccountType, string> = {
   revenue:        "매출",
   cogs:           "매출원가",
   expense:        "판관비",
@@ -485,7 +485,7 @@ const TYPE_LABELS: Record<AccountType, string> = {
   other:          "미분류",
 };
 
-const TYPE_COLORS: Record<AccountType, string> = {
+const typeColors: Record<AccountType, string> = {
   revenue:        "bg-blue-100 text-blue-700",
   cogs:           "bg-orange-100 text-orange-700",
   expense:        "bg-purple-100 text-purple-700",
@@ -497,7 +497,7 @@ const TYPE_COLORS: Record<AccountType, string> = {
   other:          "bg-amber-100 text-amber-800",
 };
 
-const ALL_TYPES: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense", "asset", "liability", "equity", "other"];
+const allTypes: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense", "asset", "liability", "equity", "other"];
 
 function ClassifyView({
   rows,
@@ -528,7 +528,7 @@ function ClassifyView({
     });
   }, [rows]);
 
-  async function handleChange(account: string, newType: AccountType) {
+  async function HandleChange(account: string, newType: AccountType) {
     setPending(account);
     setErrorMsg(null);
     try {
@@ -568,20 +568,20 @@ function ClassifyView({
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-800">{account}</p>
-              <p className="mt-0.5 text-xs text-slate-400">{fmtNum(total)}원</p>
+              <p className="mt-0.5 text-xs text-slate-400">{FmtNum(total)}원</p>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${TYPE_COLORS[type]}`}>
-                {TYPE_LABELS[type]}
+              <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${typeColors[type]}`}>
+                {typeLabels[type]}
               </span>
               <select
                 value={type}
                 disabled={pending === account}
-                onChange={(e) => handleChange(account, e.target.value as AccountType)}
+                onChange={(e) => HandleChange(account, e.target.value as AccountType)}
                 className="rounded-xl border border-slate-200 bg-white py-1.5 pl-2.5 pr-7 text-xs font-medium text-slate-600 shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
               >
-                {ALL_TYPES.map((t) => (
-                  <option key={t} value={t}>{TYPE_LABELS[t]}</option>
+                {allTypes.map((t) => (
+                  <option key={t} value={t}>{typeLabels[t]}</option>
                 ))}
               </select>
               {pending === account && (
@@ -602,26 +602,26 @@ function ClassifyView({
 
 type Row = (string | number | null)[];
 
-function makeSheet(data: Row[], colWidths: number[]): XLSX.WorkSheet {
+function MakeSheet(data: Row[], colWidths: number[]): XLSX.WorkSheet {
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = colWidths.map(wch => ({ wch }));
   return ws;
 }
 
-function exportIncomeStatement(rows: FinanceRow[], filename: string) {
-  const revenue  = groupByAccount(rows.filter(r => r.type === "revenue"));
-  const cogs     = groupByAccount(rows.filter(r => r.type === "cogs"));
-  const expenses = groupByAccount(rows.filter(r => r.type === "expense"));
-  const nonOpInc = groupByAccount(rows.filter(r => r.type === "non_op_income"));
-  const nonOpExp = groupByAccount(rows.filter(r => r.type === "non_op_expense"));
+function ExportIncomeStatement(rows: FinanceRow[], filename: string) {
+  const revenue  = GroupByAccount(rows.filter(r => r.type === "revenue"));
+  const cogs     = GroupByAccount(rows.filter(r => r.type === "cogs"));
+  const expenses = GroupByAccount(rows.filter(r => r.type === "expense"));
+  const nonOpInc = GroupByAccount(rows.filter(r => r.type === "non_op_income"));
+  const nonOpExp = GroupByAccount(rows.filter(r => r.type === "non_op_expense"));
 
-  const totalRevenue    = sum(revenue);
-  const totalCogs       = sum(cogs);
+  const totalRevenue    = Sum(revenue);
+  const totalCogs       = Sum(cogs);
   const grossProfit     = totalRevenue - totalCogs;
-  const totalExpense    = sum(expenses);
+  const totalExpense    = Sum(expenses);
   const operatingProfit = grossProfit - totalExpense;
-  const totalNonOpInc   = sum(nonOpInc);
-  const totalNonOpExp   = sum(nonOpExp);
+  const totalNonOpInc   = Sum(nonOpInc);
+  const totalNonOpExp   = Sum(nonOpExp);
   const netIncome       = operatingProfit + totalNonOpInc - totalNonOpExp;
   const hasNonOp        = nonOpInc.size > 0 || nonOpExp.size > 0;
 
@@ -651,28 +651,28 @@ function exportIncomeStatement(rows: FinanceRow[], filename: string) {
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, makeSheet(data, [32, 18, 18]), '손익계산서');
+  XLSX.utils.book_append_sheet(wb, MakeSheet(data, [32, 18, 18]), '손익계산서');
   XLSX.writeFile(wb, `${filename}_손익계산서.xlsx`);
 }
 
-function exportBalanceSheet(rows: FinanceRow[], filename: string) {
+function ExportBalanceSheet(rows: FinanceRow[], filename: string) {
   const assets      = rows.filter(r => r.type === "asset");
   const liabilities = rows.filter(r => r.type === "liability");
   const equity      = rows.filter(r => r.type === "equity");
 
-  const currentAssets    = groupByAccount(assets.filter(r => CURRENT_ASSET_KW.some(kw => r.account.includes(kw))));
-  const nonCurrentAssets = groupByAccount(assets.filter(r => !CURRENT_ASSET_KW.some(kw => r.account.includes(kw))));
-  const currentLiab      = groupByAccount(liabilities.filter(r => CURRENT_LIABILITY_KW.some(kw => r.account.includes(kw))));
-  const nonCurrentLiab   = groupByAccount(liabilities.filter(r => !CURRENT_LIABILITY_KW.some(kw => r.account.includes(kw))));
-  const equityAccounts   = groupByAccount(equity);
+  const currentAssets    = GroupByAccount(assets.filter(r => currentAssetKw.some(kw => r.account.includes(kw))));
+  const nonCurrentAssets = GroupByAccount(assets.filter(r => !currentAssetKw.some(kw => r.account.includes(kw))));
+  const currentLiab      = GroupByAccount(liabilities.filter(r => currentLiabilityKw.some(kw => r.account.includes(kw))));
+  const nonCurrentLiab   = GroupByAccount(liabilities.filter(r => !currentLiabilityKw.some(kw => r.account.includes(kw))));
+  const equityAccounts   = GroupByAccount(equity);
 
-  const totalCurrentAssets    = sum(currentAssets);
-  const totalNonCurrentAssets = sum(nonCurrentAssets);
+  const totalCurrentAssets    = Sum(currentAssets);
+  const totalNonCurrentAssets = Sum(nonCurrentAssets);
   const totalAssets           = totalCurrentAssets + totalNonCurrentAssets;
-  const totalCurrentLiab      = sum(currentLiab);
-  const totalNonCurrentLiab   = sum(nonCurrentLiab);
+  const totalCurrentLiab      = Sum(currentLiab);
+  const totalNonCurrentLiab   = Sum(nonCurrentLiab);
   const totalLiabilities      = totalCurrentLiab + totalNonCurrentLiab;
-  const totalEquity           = sum(equityAccounts);
+  const totalEquity           = Sum(equityAccounts);
 
   const data: Row[] = [
     ['계정과목', '금액', '합계'],
@@ -706,7 +706,7 @@ function exportBalanceSheet(rows: FinanceRow[], filename: string) {
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, makeSheet(data, [32, 18, 18]), '재무상태표');
+  XLSX.utils.book_append_sheet(wb, MakeSheet(data, [32, 18, 18]), '재무상태표');
   XLSX.writeFile(wb, `${filename}_재무상태표.xlsx`);
 }
 
@@ -732,7 +732,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     [rows]
   );
 
-  const handleReclassify = useCallback(async (account: string, newType: AccountType) => {
+  const HandleReclassify = useCallback(async (account: string, newType: AccountType) => {
     // 낙관적 업데이트: 즉시 UI 반영
     let prevType: AccountType | null = null;
     setRows(prev => {
@@ -756,7 +756,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     }
   }, [params.reportId]);
 
-  const handleCompareChange = useCallback(async (id: string) => {
+  const HandleCompareChange = useCallback(async (id: string) => {
     setCompareId(id);
     if (!id) { setCompareRows(null); return; }
     setCompareLoading(true);
@@ -769,7 +769,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     }
   }, []);
 
-  const handlePrint = useReactToPrint({
+  const HandlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: reportName,
     pageStyle: `
@@ -793,10 +793,10 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     return rows.filter(r => { if (r.type === "other" && !seen.has(r.account)) { seen.add(r.account); return true; } return false; }).length;
   }, [rows]);
 
-  function handleExcelExport() {
+  function HandleExcelExport() {
     const name = reportName.replace(/\.(xlsx|xls)$/i, "");
-    if (tab === "income")  exportIncomeStatement(rows, name);
-    if (tab === "balance") exportBalanceSheet(rows, name);
+    if (tab === "income")  ExportIncomeStatement(rows, name);
+    if (tab === "balance") ExportBalanceSheet(rows, name);
   }
 
   return (
@@ -832,7 +832,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
           <>
             <button
               type="button"
-              onClick={() => handlePrint()}
+              onClick={() => HandlePrint()}
               className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:border-slate-300 hover:text-slate-900"
             >
               <PrintIcon />
@@ -840,7 +840,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
             </button>
             <button
               type="button"
-              onClick={handleExcelExport}
+              onClick={HandleExcelExport}
               className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm transition hover:bg-emerald-100"
             >
               <ExcelIcon />
@@ -856,7 +856,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
           <span className="shrink-0 text-xs font-semibold text-blue-600">전기 비교</span>
           <select
             value={compareId}
-            onChange={(e) => handleCompareChange(e.target.value)}
+            onChange={(e) => HandleCompareChange(e.target.value)}
             disabled={compareLoading}
             className="min-w-0 flex-1 rounded-xl border border-blue-200 bg-white py-1.5 pl-3 pr-7 text-xs text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50"
           >
@@ -884,7 +884,7 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
       </div>
 
       {/* 계정 분류 탭 */}
-      {tab === "classify" && <ClassifyView rows={rows} onReclassify={handleReclassify} />}
+      {tab === "classify" && <ClassifyView rows={rows} onReclassify={HandleReclassify} />}
     </div>
   );
 }

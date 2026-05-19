@@ -1,4 +1,4 @@
-export function toKoreanAuthError(message: string): string {
+export function ToKoreanAuthError(message: string): string {
   if (/invalid login credentials/i.test(message)) return "이메일 또는 비밀번호가 올바르지 않습니다.";
   if (/email not confirmed/i.test(message)) return "이메일 인증이 완료되지 않았습니다. 받은 편지함을 확인해 주세요.";
   if (/user already registered/i.test(message)) return "이미 사용 중인 이메일입니다.";

@@ -7,32 +7,32 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import type { FinanceRow } from "@/types/finance";
-import { groupByMonth, groupByQuarter, groupBySemiAnnual } from "@/lib/aggregator";
-import { useTheme } from "@/components/ThemeProvider";
-import { tooltipFmt } from "@/lib/format";
+import { GroupByMonth, GroupByQuarter, GroupBySemiAnnual } from "@/lib/aggregator";
+import { UseTheme } from "@/components/ThemeProvider";
+import { TooltipFmt } from "@/lib/format";
 
 type ChartType = "bar" | "line";
 type Period    = "monthly" | "quarterly" | "semiannual";
 
-const PERIOD_OPTIONS: { value: Period; label: string }[] = [
+const periodOptions: { value: Period; label: string }[] = [
   { value: "monthly",    label: "월별" },
   { value: "quarterly",  label: "분기별" },
   { value: "semiannual", label: "반기별" },
 ];
 
-const CHART_OPTIONS: { value: ChartType; label: string }[] = [
+const chartOptions: { value: ChartType; label: string }[] = [
   { value: "bar",  label: "막대" },
   { value: "line", label: "꺾은선" },
 ];
 
-const SERIES = [
+const series = [
   { key: "revenue", name: "매출",    color: "#3b82f6" },
   { key: "cogs",    name: "매출원가", color: "#f87171" },
   { key: "expense", name: "판관비",  color: "#fb923c" },
 ];
 
 export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
-  const { theme } = useTheme();
+  const { theme } = UseTheme();
   const isDark = theme === "dark";
 
   const [chartType, setChartType] = useState<ChartType>("bar");
@@ -46,9 +46,9 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
 
   const data = useMemo(() => {
     if (rows.length === 0) return [];
-    if (period === "monthly")    return groupByMonth(rows);
-    if (period === "quarterly")  return groupByQuarter(rows);
-    return groupBySemiAnnual(rows);
+    if (period === "monthly")    return GroupByMonth(rows);
+    if (period === "quarterly")  return GroupByQuarter(rows);
+    return GroupBySemiAnnual(rows);
   }, [rows, period]);
 
   if (data.length === 0) return null;
@@ -63,7 +63,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
 
         <div className="flex items-center gap-2">
           <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
-            {PERIOD_OPTIONS.map((opt) => (
+            {periodOptions.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -80,7 +80,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
           </div>
 
           <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
-            {CHART_OPTIONS.map((opt) => (
+            {chartOptions.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
@@ -109,9 +109,9 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
               width={56}
               {...shared}
             />
-            <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
+            <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }} />
-            {SERIES.map((s) => (
+            {series.map((s) => (
               <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} />
             ))}
           </BarChart>
@@ -125,9 +125,9 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
               width={56}
               {...shared}
             />
-            <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
+            <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }} />
-            {SERIES.map((s) => (
+            {series.map((s) => (
               <Line
                 key={s.key}
                 type="monotone"

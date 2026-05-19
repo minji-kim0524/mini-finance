@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { FinanceRow } from "@/types/finance";
 import ReportViewer from "./ReportViewer";
-import { formatDate } from "@/lib/format";
+import { FormatDate } from "@/lib/format";
 
 export default async function ReportDashboardPage({
   params,
@@ -11,7 +11,7 @@ export default async function ReportDashboardPage({
   params: Promise<{ reportId: string }>;
 }) {
   const { reportId } = await params;
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
@@ -42,7 +42,7 @@ export default async function ReportDashboardPage({
   const financeRows = (rows ?? []) as FinanceRow[];
   const otherReports = (allReports ?? []) as { id: string; name: string; created_at: string }[];
 
-  const uploadDate = formatDate(report.created_at);
+  const uploadDate = FormatDate(report.created_at);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">

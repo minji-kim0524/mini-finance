@@ -1,17 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { toKoreanAuthError } from "@/lib/authErrors";
+import { CreateClient } from "@/lib/supabase/client";
+import { ToKoreanAuthError } from "@/lib/authErrors";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
-  const supabase = createClient();
+  const supabase = CreateClient();
 
-  async function handleSubmit() {
+  async function HandleSubmit() {
     setError("");
     if (!email.trim()) {
       setError("이메일을 입력해주세요.");
@@ -25,7 +25,7 @@ export default function ForgotPasswordPage() {
     setLoading(false);
 
     if (error) {
-      setError(toKoreanAuthError(error.message));
+      setError(ToKoreanAuthError(error.message));
       return;
     }
 
@@ -74,7 +74,7 @@ export default function ForgotPasswordPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleSubmit(); }}
               placeholder="example@email.com"
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white"
             />
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={HandleSubmit}
             disabled={loading}
             className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >

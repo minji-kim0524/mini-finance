@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Report } from "@/types/finance";
-import { formatKRW, formatDate } from "@/lib/format";
+import { FormatKRW, FormatDate } from "@/lib/format";
 import { ExcelIcon, ChevronRightIcon, TrashIcon } from "@/app/utils/Icons";
 import { PlanBadge, UpgradeBanner } from "@/app/utils/ReportCards";
 
@@ -13,7 +13,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  function toggleSelect(id: string) {
+  function ToggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -22,7 +22,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
     });
   }
 
-  function toggleAll() {
+  function ToggleAll() {
     if (selected.size === reports.length) {
       setSelected(new Set());
     } else {
@@ -30,7 +30,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
     }
   }
 
-  async function handleDeleteSelected() {
+  async function HandleDeleteSelected() {
     setDeleting(true);
     try {
       await Promise.all(
@@ -80,7 +80,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
           <input
             type="checkbox"
             checked={allSelected}
-            onChange={toggleAll}
+            onChange={ToggleAll}
             className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600 dark:border-slate-600"
           />
           <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -115,7 +115,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
             </button>
             <button
               type="button"
-              onClick={handleDeleteSelected}
+              onClick={HandleDeleteSelected}
               disabled={deleting}
               className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
             >
@@ -133,7 +133,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
               <input
                 type="checkbox"
                 checked={isSelected}
-                onChange={() => toggleSelect(report.id)}
+                onChange={() => ToggleSelect(report.id)}
                 className="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 accent-blue-600 dark:border-slate-600"
               />
               <Link
@@ -150,17 +150,17 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{report.name}</p>
                   <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
-                    {formatDate(report.created_at)} · {report.row_count}건
+                    {FormatDate(report.created_at)} · {report.row_count}건
                   </p>
                   <div className="mt-2.5 flex gap-5">
                     <div>
                       <p className="text-xs text-slate-400 dark:text-slate-500">매출</p>
-                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{formatKRW(report.total_revenue)}</p>
+                      <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{FormatKRW(report.total_revenue)}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-400 dark:text-slate-500">영업이익</p>
                       <p className={`text-sm font-semibold ${report.operating_profit < 0 ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
-                        {formatKRW(report.operating_profit)}
+                        {FormatKRW(report.operating_profit)}
                       </p>
                     </div>
                   </div>

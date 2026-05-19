@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { CreateClient } from "@/lib/supabase/client";
 
 interface Props {
   name: string | null;
@@ -21,9 +21,9 @@ export default function ProfileClient({ name, email, plan }: Props) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = CreateClient();
 
-  async function handleNameSave(e: React.FormEvent) {
+  async function HandleNameSave(e: React.FormEvent) {
     e.preventDefault();
     setNameSaving(true);
     setNameMessage(null);
@@ -47,7 +47,7 @@ export default function ProfileClient({ name, email, plan }: Props) {
     }
   }
 
-  async function handleDeleteAccount() {
+  async function HandleDeleteAccount() {
     setDeleting(true);
     setDeleteError(null);
     try {
@@ -66,7 +66,7 @@ export default function ProfileClient({ name, email, plan }: Props) {
     }
   }
 
-  const DELETE_CONFIRM_PHRASE = "탈퇴하겠습니다";
+  const deleteConfirmPhrase = "탈퇴하겠습니다";
 
   return (
     <div className="mx-auto max-w-lg space-y-8">
@@ -100,7 +100,7 @@ export default function ProfileClient({ name, email, plan }: Props) {
       {/* 이름 변경 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">이름 변경</h2>
-        <form onSubmit={handleNameSave} className="space-y-3">
+        <form onSubmit={HandleNameSave} className="space-y-3">
           <input
             type="text"
             value={nameValue}
@@ -141,14 +141,14 @@ export default function ProfileClient({ name, email, plan }: Props) {
           <div className="space-y-3">
             <p className="text-sm text-slate-700 dark:text-slate-300">
               계속하려면 아래 입력란에{" "}
-              <strong className="text-red-500">{DELETE_CONFIRM_PHRASE}</strong>
+              <strong className="text-red-500">{deleteConfirmPhrase}</strong>
               을 입력하세요.
             </p>
             <input
               type="text"
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
-              placeholder={DELETE_CONFIRM_PHRASE}
+              placeholder={deleteConfirmPhrase}
               className="w-full rounded-xl border border-red-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-900/50 dark:bg-slate-800 dark:text-slate-100"
             />
             {deleteError && (
@@ -164,8 +164,8 @@ export default function ProfileClient({ name, email, plan }: Props) {
               </button>
               <button
                 type="button"
-                onClick={handleDeleteAccount}
-                disabled={deleteInput !== DELETE_CONFIRM_PHRASE || deleting}
+                onClick={HandleDeleteAccount}
+                disabled={deleteInput !== deleteConfirmPhrase || deleting}
                 className="rounded-xl bg-red-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
               >
                 {deleting ? "처리 중…" : "계정 영구 삭제"}

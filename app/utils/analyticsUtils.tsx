@@ -2,21 +2,21 @@ import type { ReactNode } from "react";
 // eslint-disable-next-line @typescript-eslint/no-deprecated
 import type { PieLabelRenderProps } from "recharts";
 import type { Report } from "@/types/finance";
-import { formatKRW } from "@/lib/format";
+import { FormatKRW } from "@/lib/format";
 
-export const PIE_COLORS = ["#3b82f6","#34d399","#f87171","#fb923c","#a78bfa","#f472b6","#facc15","#38bdf8","#4ade80","#f97316"];
+export const pieColors = ["#3b82f6","#34d399","#f87171","#fb923c","#a78bfa","#f472b6","#facc15","#38bdf8","#4ade80","#f97316"];
 
-export function renderPieLabel(props: PieLabelRenderProps) {
+export function RenderPieLabel(props: PieLabelRenderProps) {
   const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
   if (
     cx === undefined || cy === undefined || midAngle === undefined ||
     innerRadius === undefined || outerRadius === undefined || percent === undefined ||
     (percent as number) < 0.05
   ) return null;
-  const RADIAN = Math.PI / 180;
+  const radian = Math.PI / 180;
   const r = (innerRadius as number) + ((outerRadius as number) - (innerRadius as number)) * 0.5;
-  const x = (cx as number) + r * Math.cos(-(midAngle as number) * RADIAN);
-  const y = (cy as number) + r * Math.sin(-(midAngle as number) * RADIAN);
+  const x = (cx as number) + r * Math.cos(-(midAngle as number) * radian);
+  const y = (cy as number) + r * Math.sin(-(midAngle as number) * radian);
   return (
     <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={600}>
       {`${((percent as number) * 100).toFixed(0)}%`}
@@ -24,7 +24,7 @@ export function renderPieLabel(props: PieLabelRenderProps) {
   );
 }
 
-export function getChartTheme(isDark: boolean) {
+export function GetChartTheme(isDark: boolean) {
   const tickColor = isDark ? "#64748b" : "#94a3b8";
   return {
     gridColor:    isDark ? "#1e293b" : "#f1f5f9",
@@ -36,14 +36,14 @@ export function getChartTheme(isDark: boolean) {
   };
 }
 
-export function buildStats(reports: Report[]) {
+export function BuildStats(reports: Report[]) {
   const totalRevenue = reports.reduce((s, r) => s + r.total_revenue, 0);
   const totalOp      = reports.reduce((s, r) => s + r.operating_profit, 0);
   const avgMargin    = totalRevenue > 0 ? (totalOp / totalRevenue) * 100 : 0;
   return [
     { label: "전체 리포트",     value: `${reports.length}개`,      sub: "업로드된 파일" },
-    { label: "총 매출",         value: formatKRW(totalRevenue),     sub: "전체 합산" },
-    { label: "총 영업이익",     value: formatKRW(totalOp),         sub: "전체 합산",  color: totalOp  >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500" },
+    { label: "총 매출",         value: FormatKRW(totalRevenue),     sub: "전체 합산" },
+    { label: "총 영업이익",     value: FormatKRW(totalOp),         sub: "전체 합산",  color: totalOp  >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500" },
     { label: "평균 영업이익률", value: `${avgMargin.toFixed(1)}%`, sub: "전체 평균",  color: avgMargin >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500" },
   ];
 }

@@ -1,6 +1,6 @@
 import type { AccountType } from '@/types/finance';
 
-const COGS_KEYWORDS = [
+const cogsKeywords = [
   '매출원가', '상품원가', '제품원가', '공사원가', '분양원가',
   '매입', '원가',
   '재료비', '원재료', '부재료', '노무비', '외주비', '외주가공비',
@@ -8,7 +8,7 @@ const COGS_KEYWORDS = [
 ];
 
 // 자산: COGS 다음, REVENUE·EXPENSE 이전에 체크 (감가상각누계액 등 오분류 방지)
-const ASSET_KEYWORDS = [
+const assetKeywords = [
   // 현금·예금
   '현금', '보통예금', '당좌예금', '정기예금', '정기적금', '외화예금',
   // 채권·미수
@@ -28,7 +28,7 @@ const ASSET_KEYWORDS = [
 ];
 
 // 부채: ASSET 이후, REVENUE 이전에 체크
-const LIABILITY_KEYWORDS = [
+const liabilityKeywords = [
   // 매입채무
   '매입채무', '지급어음', '외상매입금',
   // 미지급
@@ -43,20 +43,20 @@ const LIABILITY_KEYWORDS = [
   '임대보증금',
 ];
 
-const EQUITY_KEYWORDS = [
+const equityKeywords = [
   '자본금', '자본잉여금', '주식발행초과금',
   '이익잉여금', '결손금',
   '기타포괄손익', '자기주식',
 ];
 
-const NON_OP_INCOME_KEYWORDS = [
+const nonOpIncomeKeywords = [
   '이자수익', '배당수익', '배당금수익',
   '외환차익', '외화환산이익',
   '유가증권처분이익', '투자자산처분이익', '유형자산처분이익',
   '잡이익', '잡수입',
 ];
 
-const NON_OP_EXPENSE_KEYWORDS = [
+const nonOpExpenseKeywords = [
   '이자비용', '금융비용', '사채이자',
   '기부금',
   '외환차손', '외화환산손실',
@@ -64,7 +64,7 @@ const NON_OP_EXPENSE_KEYWORDS = [
   '잡손실',
 ];
 
-const REVENUE_KEYWORDS = [
+const revenueKeywords = [
   '매출액', '상품매출', '제품매출', '공사매출', '분양매출', '매출',
   '용역수익', '서비스수익', '임대수익', '임대료수익',
   '로열티수익', '수강료수익', '수탁수익',
@@ -72,7 +72,7 @@ const REVENUE_KEYWORDS = [
   '수입',
 ];
 
-const EXPENSE_KEYWORDS = [
+const expenseKeywords = [
   '급여', '임금', '급료', '상여금', '성과급', '퇴직급여', '퇴직금',
   '복리후생', '복리후생비', '식대', '교통비',
   '임차료', '지급임차료', '렌탈료', '리스료',
@@ -94,14 +94,14 @@ const EXPENSE_KEYWORDS = [
   '잡비',
 ];
 
-export function classifyAccount(account: string): AccountType {
-  if (COGS_KEYWORDS.some((kw) => account.includes(kw))) return 'cogs';
-  if (ASSET_KEYWORDS.some((kw) => account.includes(kw))) return 'asset';
-  if (LIABILITY_KEYWORDS.some((kw) => account.includes(kw))) return 'liability';
-  if (EQUITY_KEYWORDS.some((kw) => account.includes(kw))) return 'equity';
-  if (NON_OP_INCOME_KEYWORDS.some((kw) => account.includes(kw))) return 'non_op_income';
-  if (NON_OP_EXPENSE_KEYWORDS.some((kw) => account.includes(kw))) return 'non_op_expense';
-  if (REVENUE_KEYWORDS.some((kw) => account.includes(kw))) return 'revenue';
-  if (EXPENSE_KEYWORDS.some((kw) => account.includes(kw))) return 'expense';
+export function ClassifyAccount(account: string): AccountType {
+  if (cogsKeywords.some((kw) => account.includes(kw))) return 'cogs';
+  if (assetKeywords.some((kw) => account.includes(kw))) return 'asset';
+  if (liabilityKeywords.some((kw) => account.includes(kw))) return 'liability';
+  if (equityKeywords.some((kw) => account.includes(kw))) return 'equity';
+  if (nonOpIncomeKeywords.some((kw) => account.includes(kw))) return 'non_op_income';
+  if (nonOpExpenseKeywords.some((kw) => account.includes(kw))) return 'non_op_expense';
+  if (revenueKeywords.some((kw) => account.includes(kw))) return 'revenue';
+  if (expenseKeywords.some((kw) => account.includes(kw))) return 'expense';
   return 'other';
 }

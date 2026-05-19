@@ -9,7 +9,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleUpgrade() {
+  async function HandleUpgrade() {
     setLoading(true);
     setError(null);
     try {
@@ -75,7 +75,7 @@ export default function PricingPage() {
             </ul>
             <button
               type="button"
-              onClick={handleUpgrade}
+              onClick={HandleUpgrade}
               disabled={loading}
               className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
             >

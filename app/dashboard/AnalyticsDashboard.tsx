@@ -11,25 +11,25 @@ import {
 import Link from "next/link";
 import type { FinanceRow, Report } from "@/types/finance";
 import {
-  groupByMonth, groupByQuarter, groupBySemiAnnual, groupByYear,
-  buildPredictSeries,
+  GroupByMonth, GroupByQuarter, GroupBySemiAnnual, GroupByYear,
+  BuildPredictSeries,
 } from "@/lib/aggregator";
-import { useTheme } from "@/components/ThemeProvider";
-import { formatKRW, formatDate, tooltipFmt } from "@/lib/format";
+import { UseTheme } from "@/components/ThemeProvider";
+import { FormatKRW, FormatDate, TooltipFmt } from "@/lib/format";
 import {
-  PIE_COLORS, renderPieLabel, getChartTheme, buildStats, TabSwitcher, EmptyChartMessage,
+  pieColors, RenderPieLabel, GetChartTheme, BuildStats, TabSwitcher, EmptyChartMessage,
 } from "@/app/utils/analyticsUtils";
 
 type ChartTab  = "bar" | "predict" | "pie";
 type BarPeriod = "monthly" | "quarterly" | "semiannual" | "yearly";
 
-const CHART_TABS = [
+const chartTabs = [
   { value: "bar",     label: "막대그래프" },
   { value: "predict", label: "추이·예측" },
   { value: "pie",     label: "원형그래프" },
 ] as const;
 
-const PERIOD_TABS = [
+const periodTabs = [
   { value: "monthly",    label: "월별" },
   { value: "quarterly",  label: "분기" },
   { value: "semiannual", label: "반기" },
@@ -45,8 +45,8 @@ export default function AnalyticsDashboard({
   initialRows: FinanceRow[];
   initialReportId: string | null;
 }) {
-  const { theme } = useTheme();
-  const { gridColor, tickColor, tooltipStyle, axisTick } = getChartTheme(theme === "dark");
+  const { theme } = UseTheme();
+  const { gridColor, tickColor, tooltipStyle, axisTick } = GetChartTheme(theme === "dark");
 
   const [selectedId, setSelectedId] = useState(initialReportId ?? "");
   const [rows, setRows]             = useState<FinanceRow[]>(initialRows);
@@ -54,7 +54,7 @@ export default function AnalyticsDashboard({
   const [chartTab, setChartTab]     = useState<ChartTab>("bar");
   const [barPeriod, setBarPeriod]   = useState<BarPeriod>("monthly");
 
-  async function handleReportChange(id: string) {
+  async function HandleReportChange(id: string) {
     setSelectedId(id);
     if (!id) { setRows([]); return; }
     setLoading(true);
@@ -74,13 +74,13 @@ export default function AnalyticsDashboard({
 
   const barData = useMemo(() => {
     if (plRows.length === 0) return [];
-    if (barPeriod === "quarterly")  return groupByQuarter(plRows);
-    if (barPeriod === "semiannual") return groupBySemiAnnual(plRows);
-    if (barPeriod === "yearly")     return groupByYear(plRows);
-    return groupByMonth(plRows);
+    if (barPeriod === "quarterly")  return GroupByQuarter(plRows);
+    if (barPeriod === "semiannual") return GroupBySemiAnnual(plRows);
+    if (barPeriod === "yearly")     return GroupByYear(plRows);
+    return GroupByMonth(plRows);
   }, [plRows, barPeriod]);
 
-  const predictData = useMemo(() => buildPredictSeries(plRows, 3), [plRows]);
+  const predictData = useMemo(() => BuildPredictSeries(plRows, 3), [plRows]);
 
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
@@ -104,7 +104,7 @@ export default function AnalyticsDashboard({
     );
   }
 
-  const stats = buildStats(reports);
+  const stats = BuildStats(reports);
 
   return (
     <div className="space-y-5">
@@ -124,7 +124,7 @@ export default function AnalyticsDashboard({
             <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">재무 분석</h2>
             <select
               value={selectedId}
-              onChange={(e) => handleReportChange(e.target.value)}
+              onChange={(e) => HandleReportChange(e.target.value)}
               disabled={loading}
               className="rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-7 text-xs text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
             >
@@ -139,7 +139,7 @@ export default function AnalyticsDashboard({
               </svg>
             )}
           </div>
-          <TabSwitcher tabs={CHART_TABS} active={chartTab} onChange={setChartTab} />
+          <TabSwitcher tabs={chartTabs} active={chartTab} onChange={setChartTab} />
         </div>
 
         <div className="p-6">
@@ -151,7 +151,7 @@ export default function AnalyticsDashboard({
                 <>
                   <div className="mb-5 flex items-center justify-between">
                     <p className="text-xs text-slate-500 dark:text-slate-400">매출 · 매출원가 · 판관비</p>
-                    <TabSwitcher tabs={PERIOD_TABS} active={barPeriod} onChange={setBarPeriod} />
+                    <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} />
                   </div>
                   <ResponsiveContainer width="100%" height={260}>
                     <BarChart data={barData} barCategoryGap="30%" barGap={3}>
@@ -164,7 +164,7 @@ export default function AnalyticsDashboard({
                         axisLine={false}
                         tickLine={false}
                       />
-                      <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
+                      <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} />
                       <Bar dataKey="revenue" name="매출"     fill="#3b82f6" radius={[4,4,0,0]} />
                       <Bar dataKey="cogs"    name="매출원가" fill="#f87171" radius={[4,4,0,0]} />
@@ -198,7 +198,7 @@ export default function AnalyticsDashboard({
                           axisLine={false}
                           tickLine={false}
                         />
-                        <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
+                        <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
                         <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} />
                         <Line type="monotone" dataKey="revenue"        name="매출 (실적)"     stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
                         <Line type="monotone" dataKey="profit"         name="영업이익 (실적)" stroke="#34d399" strokeWidth={2} dot={{ r: 4, fill: "#34d399", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
@@ -230,13 +230,13 @@ export default function AnalyticsDashboard({
                             outerRadius={110}
                             innerRadius={55}
                             paddingAngle={2}
-                            label={renderPieLabel}
+                            label={RenderPieLabel}
                           >
                             {pieData.map((_, i) => (
-                              <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                              <Cell key={i} fill={pieColors[i % pieColors.length]} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={tooltipFmt} contentStyle={tooltipStyle} />
+                          <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
                           <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
                         </PieChart>
                       </ResponsiveContainer>
@@ -247,7 +247,7 @@ export default function AnalyticsDashboard({
                           const pct   = total > 0 ? ((d.value / total) * 100).toFixed(1) : "0.0";
                           return (
                             <div key={d.name} className="flex items-center gap-2">
-                              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: pieColors[i % pieColors.length] }} />
                               <span className="min-w-0 flex-1 truncate text-xs text-slate-600 dark:text-slate-400">{d.name}</span>
                               <span className="shrink-0 text-xs font-semibold text-slate-700 dark:text-slate-300">{pct}%</span>
                             </div>
@@ -279,12 +279,12 @@ export default function AnalyticsDashboard({
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-200">{r.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{formatDate(r.created_at)} · {r.row_count}건</p>
+                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{FormatDate(r.created_at)} · {r.row_count}건</p>
                 </div>
                 <div className="ml-4 shrink-0 text-right">
                   <p className="text-xs text-slate-400 dark:text-slate-500">영업이익</p>
                   <p className={`text-sm font-semibold ${r.operating_profit < 0 ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"}`}>
-                    {formatKRW(r.operating_profit)}
+                    {FormatKRW(r.operating_profit)}
                   </p>
                 </div>
               </Link>

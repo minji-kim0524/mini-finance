@@ -1,6 +1,6 @@
 import type { FinanceRow, MonthlyData, PLSummary } from '@/types/finance';
 
-function accumulate(map: Map<string, MonthlyData>, key: string, row: FinanceRow) {
+function Accumulate(map: Map<string, MonthlyData>, key: string, row: FinanceRow) {
   if (!map.has(key)) map.set(key, { month: key, revenue: 0, cogs: 0, expense: 0 });
   const entry = map.get(key)!;
   if (row.type === 'revenue') entry.revenue += row.amount;
@@ -8,41 +8,41 @@ function accumulate(map: Map<string, MonthlyData>, key: string, row: FinanceRow)
   else if (row.type === 'expense') entry.expense += row.amount;
 }
 
-export function groupByMonth(rows: FinanceRow[]): MonthlyData[] {
+export function GroupByMonth(rows: FinanceRow[]): MonthlyData[] {
   const map = new Map<string, MonthlyData>();
   for (const row of rows) {
     const yy = row.date.slice(2, 4);
     const mm = row.date.slice(5, 7);
-    accumulate(map, `${yy}.${mm}`, row);
+    Accumulate(map, `${yy}.${mm}`, row);
   }
   return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
 }
 
-export function groupByQuarter(rows: FinanceRow[]): MonthlyData[] {
+export function GroupByQuarter(rows: FinanceRow[]): MonthlyData[] {
   const map = new Map<string, MonthlyData>();
   for (const row of rows) {
     const yy = row.date.slice(2, 4);
     const q = Math.ceil(parseInt(row.date.slice(5, 7)) / 3);
-    accumulate(map, `${yy} Q${q}`, row);
+    Accumulate(map, `${yy} Q${q}`, row);
   }
   return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
 }
 
-export function groupBySemiAnnual(rows: FinanceRow[]): MonthlyData[] {
+export function GroupBySemiAnnual(rows: FinanceRow[]): MonthlyData[] {
   const map = new Map<string, MonthlyData>();
   for (const row of rows) {
     const yy = row.date.slice(2, 4);
     const half = parseInt(row.date.slice(5, 7)) <= 6 ? '상' : '하';
-    accumulate(map, `${yy} ${half}`, row);
+    Accumulate(map, `${yy} ${half}`, row);
   }
   return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
 }
 
-export function groupByYear(rows: FinanceRow[]): MonthlyData[] {
+export function GroupByYear(rows: FinanceRow[]): MonthlyData[] {
   const map = new Map<string, MonthlyData>();
   for (const row of rows) {
     const yyyy = row.date.slice(0, 4);
-    accumulate(map, yyyy, row);
+    Accumulate(map, yyyy, row);
   }
   return Array.from(map.values()).sort((a, b) => a.month.localeCompare(b.month));
 }
@@ -55,7 +55,7 @@ export interface PredictPoint {
   predictProfit: number | null;
 }
 
-function linReg(values: number[]): { slope: number; intercept: number } {
+function LinReg(values: number[]): { slope: number; intercept: number } {
   const n = values.length;
   if (n < 2) return { slope: 0, intercept: values[0] ?? 0 };
   let sx = 0, sy = 0, sxy = 0, sx2 = 0;
@@ -64,21 +64,21 @@ function linReg(values: number[]): { slope: number; intercept: number } {
   return { slope, intercept: (sy - slope * sx) / n };
 }
 
-function addMonths(label: string, offset: number): string {
+function AddMonths(label: string, offset: number): string {
   const yy = parseInt(label.slice(0, 2));
   const mm = parseInt(label.slice(3, 5));
   const base = yy * 12 + (mm - 1) + offset;
   return `${String(Math.floor(base / 12)).padStart(2, "0")}.${String((base % 12) + 1).padStart(2, "0")}`;
 }
 
-export function buildPredictSeries(rows: FinanceRow[], futureMonths = 3): PredictPoint[] {
-  const monthly = groupByMonth(rows);
+export function BuildPredictSeries(rows: FinanceRow[], futureMonths = 3): PredictPoint[] {
+  const monthly = GroupByMonth(rows);
   if (monthly.length === 0) return [];
 
   const revenues = monthly.map((d) => d.revenue);
   const profits  = monthly.map((d) => d.revenue - d.cogs - d.expense);
-  const revReg   = linReg(revenues);
-  const profReg  = linReg(profits);
+  const revReg   = LinReg(revenues);
+  const profReg  = LinReg(profits);
   const n        = monthly.length;
 
   const actual: PredictPoint[] = monthly.map((d, i) => ({
@@ -90,7 +90,7 @@ export function buildPredictSeries(rows: FinanceRow[], futureMonths = 3): Predic
   }));
 
   const future: PredictPoint[] = Array.from({ length: futureMonths }, (_, i) => ({
-    month:          addMonths(monthly[n - 1].month, i + 1),
+    month:          AddMonths(monthly[n - 1].month, i + 1),
     revenue:        null,
     profit:         null,
     predictRevenue: Math.round(revReg.intercept + revReg.slope * (n + i)),
@@ -100,7 +100,7 @@ export function buildPredictSeries(rows: FinanceRow[], futureMonths = 3): Predic
   return [...actual, ...future];
 }
 
-export function calcPLSummary(rows: FinanceRow[]): PLSummary {
+export function CalcPLSummary(rows: FinanceRow[]): PLSummary {
   let totalRevenue = 0;
   let totalCogs = 0;
   let totalExpense = 0;

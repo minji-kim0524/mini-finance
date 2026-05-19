@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { CreateClient } from "@/lib/supabase/server";
+import { GetSupabaseAdmin } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 // 이름 변경
 export async function PATCH(req: Request) {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -21,11 +21,11 @@ export async function PATCH(req: Request) {
 
 // 회원탈퇴
 export async function DELETE() {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const admin = getSupabaseAdmin();
+  const admin = GetSupabaseAdmin();
   const { error } = await admin.auth.admin.deleteUser(user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

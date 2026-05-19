@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import UploadClient from "./UploadClient";
 
 export default async function UploadPage() {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

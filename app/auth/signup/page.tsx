@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { CreateClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
-import { toKoreanAuthError } from "@/lib/authErrors";
+import { ToKoreanAuthError } from "@/lib/authErrors";
 
 type AccountType = "personal" | "business";
 
-const INPUT_CLS = "mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700";
+const inputCls ="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700";
 
 function Required() {
   return <span className="ml-1 text-red-500">*</span>;
@@ -23,15 +23,15 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const supabase = createClient();
+  const supabase = CreateClient();
 
-  function handleAccountTypeChange(type: AccountType) {
+  function HandleAccountTypeChange(type: AccountType) {
     setAccountType(type);
     setIdentifier("");
     setError("");
   }
 
-  function handleBusinessNumberChange(value: string) {
+  function HandleBusinessNumberChange(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 10);
     let formatted = digits;
     if (digits.length > 5) formatted = `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
@@ -39,7 +39,7 @@ export default function SignupPage() {
     setIdentifier(formatted);
   }
 
-  async function handleSignup() {
+  async function HandleSignup() {
     setError("");
     if (!name.trim()) { setError(accountType === "personal" ? "이름을 입력해주세요." : "회사명을 입력해주세요."); return; }
     if (!identifier.trim()) { setError(accountType === "personal" ? "생년월일을 입력해주세요." : "사업자등록번호를 입력해주세요."); return; }
@@ -60,7 +60,7 @@ export default function SignupPage() {
       },
     });
     setLoading(false);
-    if (error) { setError(toKoreanAuthError(error.message)); return; }
+    if (error) { setError(ToKoreanAuthError(error.message)); return; }
     setSuccess(true);
   }
 
@@ -102,7 +102,7 @@ export default function SignupPage() {
               <button
                 key={type}
                 type="button"
-                onClick={() => handleAccountTypeChange(type)}
+                onClick={() => HandleAccountTypeChange(type)}
                 className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
                   accountType === type
                     ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
@@ -116,36 +116,36 @@ export default function SignupPage() {
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {accountType === "personal" ? "이름" : "회사명"}<Required />
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"} className={INPUT_CLS} />
+            <input type="text" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"} className={inputCls} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {accountType === "personal" ? "생년월일" : <><span>사업자등록번호</span><Required /></>}
             {accountType === "personal" ? (
-              <input type="date" value={identifier} onChange={(e) => setIdentifier(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} max={new Date().toISOString().slice(0, 10)} className={INPUT_CLS} />
+              <input type="date" value={identifier} onChange={(e) => setIdentifier(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} max={new Date().toISOString().slice(0, 10)} className={inputCls} />
             ) : (
-              <input type="text" value={identifier} onChange={(e) => handleBusinessNumberChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="000-00-00000" inputMode="numeric" className={INPUT_CLS} />
+              <input type="text" value={identifier} onChange={(e) => HandleBusinessNumberChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="000-00-00000" inputMode="numeric" className={inputCls} />
             )}
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             이메일<Required />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="example@email.com" className={INPUT_CLS} />
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="example@email.com" className={inputCls} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호<Required />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="6자 이상" className={INPUT_CLS} />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="6자 이상" className={inputCls} />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호 확인<Required />
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") handleSignup(); }} placeholder="비밀번호 확인" className={INPUT_CLS} />
+            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="비밀번호 확인" className={inputCls} />
           </label>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <button type="button" onClick={handleSignup} disabled={loading} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">
+          <button type="button" onClick={HandleSignup} disabled={loading} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">
             {loading ? "가입 중…" : "회원가입"}
           </button>
         </div>

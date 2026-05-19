@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import type { FinanceRow } from "@/types/finance";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 

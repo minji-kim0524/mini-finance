@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { toKoreanAuthError } from "@/lib/authErrors";
+import { CreateClient } from "@/lib/supabase/client";
+import { ToKoreanAuthError } from "@/lib/authErrors";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = CreateClient();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
     });
   }, []);
 
-  async function handleReset() {
+  async function HandleReset() {
     setError("");
 
     if (password.length < 6) {
@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      setError(toKoreanAuthError(error.message));
+      setError(ToKoreanAuthError(error.message));
       return;
     }
 
@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleReset(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleReset(); }}
               placeholder="6자 이상"
               disabled={!sessionReady}
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50"
@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleReset(); }}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleReset(); }}
               placeholder="비밀번호 확인"
               disabled={!sessionReady}
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white disabled:opacity-50"
@@ -124,7 +124,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="button"
-            onClick={handleReset}
+            onClick={HandleReset}
             disabled={loading || !sessionReady}
             className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
           >

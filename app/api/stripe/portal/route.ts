@@ -1,9 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
-import { getStripe } from "@/lib/stripe";
+import { CreateClient } from "@/lib/supabase/server";
+import { GetStripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 
 export async function POST() {
-  const supabase = await createClient();
+  const supabase = await CreateClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -19,7 +19,7 @@ export async function POST() {
 
   const origin = process.env.NEXT_PUBLIC_SITE_URL ?? "https://mini-finance-one.vercel.app";
 
-  const session = await getStripe().billingPortal.sessions.create({
+  const session = await GetStripe().billingPortal.sessions.create({
     customer: sub.stripe_customer_id,
     return_url: `${origin}/dashboard`,
   });
