@@ -18,7 +18,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { formatKRW, formatDate, tooltipFmt } from "@/lib/format";
 import {
   PIE_COLORS, renderPieLabel, getChartTheme, buildStats, TabSwitcher, EmptyChartMessage,
-} from "@/app/utils/analytics-utils";
+} from "@/app/utils/analyticsUtils";
 
 type ChartTab  = "bar" | "predict" | "pie";
 type BarPeriod = "monthly" | "quarterly" | "semiannual" | "yearly";

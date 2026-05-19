@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
-import { toKoreanAuthError } from "@/lib/auth-errors";
+import { toKoreanAuthError } from "@/lib/authErrors";
 
 type AccountType = "personal" | "business";
 

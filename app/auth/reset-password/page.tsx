@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { toKoreanAuthError } from "@/lib/auth-errors";
+import { toKoreanAuthError } from "@/lib/authErrors";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");

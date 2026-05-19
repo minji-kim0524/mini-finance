@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
-import { toKoreanAuthError } from "@/lib/auth-errors";
+import { toKoreanAuthError } from "@/lib/authErrors";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");

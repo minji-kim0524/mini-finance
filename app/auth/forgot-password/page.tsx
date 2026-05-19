@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { toKoreanAuthError } from "@/lib/auth-errors";
+import { toKoreanAuthError } from "@/lib/authErrors";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");

@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Report } from "@/types/finance";
 import { formatKRW, formatDate } from "@/lib/format";
-import { ExcelIcon, ChevronRightIcon, TrashIcon } from "@/app/utils/icons";
-import { PlanBadge, UpgradeBanner } from "@/app/utils/report-cards";
+import { ExcelIcon, ChevronRightIcon, TrashIcon } from "@/app/utils/Icons";
+import { PlanBadge, UpgradeBanner } from "@/app/utils/ReportCards";
 
 export default function DashboardClient({ initialReports, plan }: { initialReports: Report[]; plan: string }) {
   const [reports, setReports] = useState<Report[]>(initialReports);
