@@ -21,7 +21,7 @@ export default function Sidebar({ plan }: { plan: string }) {
     <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       {/* 로고 */}
       <div className="flex h-14 items-center border-b border-slate-200 px-5 dark:border-slate-800">
-        <span className="text-base font-bold text-slate-900 dark:text-slate-100">FinanceAI</span>
+        <Link href="/dashboard" className="text-base font-bold text-slate-900 dark:text-slate-100">FinanceAI</Link>
       </div>
 
       {/* 네비게이션 */}
