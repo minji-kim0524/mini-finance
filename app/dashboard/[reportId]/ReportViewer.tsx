@@ -35,17 +35,19 @@ function Sum(map: Map<string, number>): number {
 
 // ─── 공통 테이블 행 컴포넌트 ─────────────────────────────────────
 
-function TableHeader({ compare }: { compare?: boolean }) {
+function TableHeader({ compare, currentYear, compareYear }: { compare?: boolean; currentYear?: string; compareYear?: string }) {
   return (
     <thead>
       <tr className="border-b-2 border-slate-200">
         <th className="py-2.5 pl-5 text-left text-xs font-semibold text-slate-500">계정과목</th>
         <th className="py-2.5 pr-3 text-right text-xs font-semibold text-slate-500">금액</th>
         <th className={`py-2.5 text-right text-xs font-semibold text-slate-500 ${compare ? "pr-3" : "pr-5"}`}>
-          {compare ? "당기" : "합계"}
+          {compare ? (currentYear ? `당기(${currentYear})` : "당기") : "합계"}
         </th>
         {compare && (
-          <th className="py-2.5 pr-5 text-right text-xs font-semibold text-blue-400">전기</th>
+          <th className="py-2.5 pr-5 text-right text-xs font-semibold text-blue-400">
+            {compareYear ? `전기(${compareYear})` : "전기"}
+          </th>
         )}
       </tr>
     </thead>
@@ -278,7 +280,7 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[320px]">
-          <TableHeader compare={compare} />
+          <TableHeader compare={compare} currentYear={currentRange?.end.slice(0, 4)} compareYear={compareRange?.end.slice(0, 4)} />
           <tbody>
             {/* I. 매출액 */}
             <SectionRow roman="I." label="매출액" total={totalRevenue} compareTotal={cTotalRevenue} />
@@ -421,7 +423,7 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[320px]">
-          <TableHeader compare={compare} />
+          <TableHeader compare={compare} currentYear={currentRange?.end.slice(0, 4)} compareYear={compareRange?.end.slice(0, 4)} />
           <tbody>
             {/* ── 자산 ── */}
             <CategoryRow label="자  산" colSpan={colSpan} />
