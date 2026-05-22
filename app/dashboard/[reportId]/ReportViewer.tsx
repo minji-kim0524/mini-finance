@@ -208,6 +208,13 @@ function DashboardView({ rows }: { rows: FinanceRow[] }) {
 
 // ─── 손익계산서 뷰 ───────────────────────────────────────────────
 
+function GetDateRange(rows: FinanceRow[]): { start: string; end: string } | null {
+  const dates = rows.map(r => r.date).filter(Boolean).sort();
+  if (dates.length === 0) return null;
+  const fmt = (d: string) => d.slice(0, 10).replace(/-/g, ".");
+  return { start: fmt(dates[0]), end: fmt(dates[dates.length - 1]) };
+}
+
 function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
   const revenue    = useMemo(() => GroupByAccount(rows.filter(r => r.type === "revenue")),        [rows]);
   const cogs       = useMemo(() => GroupByAccount(rows.filter(r => r.type === "cogs")),           [rows]);
@@ -250,10 +257,23 @@ function IncomeStatementView({ rows, compareRows }: { rows: FinanceRow[]; compar
 
   if (revenue.size === 0 && cogs.size === 0 && expenses.size === 0 && !hasNonOp) return <EmptyState />;
 
+  const currentRange = GetDateRange(rows);
+  const compareRange = compareRows ? GetDateRange(compareRows) : null;
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3.5 text-center">
         <p className="text-base font-semibold text-slate-900">손익계산서</p>
+        {currentRange && (
+          <p className="mt-1 text-xs text-slate-500">
+            당기&nbsp;&nbsp;{currentRange.start} 부터&nbsp;&nbsp;{currentRange.end} 까지
+          </p>
+        )}
+        {compareRange && (
+          <p className="mt-0.5 text-xs text-blue-400">
+            전기&nbsp;&nbsp;{compareRange.start} 부터&nbsp;&nbsp;{compareRange.end} 까지
+          </p>
+        )}
         <p className="mt-0.5 text-xs text-slate-400">(단위: 원)</p>
       </div>
       <div className="overflow-x-auto">
