@@ -400,10 +400,23 @@ function BalanceSheetView({ rows, compareRows }: { rows: FinanceRow[]; compareRo
     return map ? (map.get(account) ?? 0) : undefined;
   }
 
+  const currentRange = GetDateRange(rows);
+  const compareRange = compareRows ? GetDateRange(compareRows) : null;
+
   return (
     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       <div className="border-b border-slate-100 px-4 py-3.5 text-center">
         <p className="text-base font-semibold text-slate-900">재무상태표</p>
+        {currentRange && (
+          <p className="mt-1 text-xs text-slate-500">
+            당기&nbsp;&nbsp;{currentRange.start} 부터&nbsp;&nbsp;{currentRange.end} 까지
+          </p>
+        )}
+        {compareRange && (
+          <p className="mt-0.5 text-xs text-blue-400">
+            전기&nbsp;&nbsp;{compareRange.start} 부터&nbsp;&nbsp;{compareRange.end} 까지
+          </p>
+        )}
         <p className="mt-0.5 text-xs text-slate-400">(단위: 원)</p>
       </div>
       <div className="overflow-x-auto">
