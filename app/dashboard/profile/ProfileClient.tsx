@@ -8,9 +8,11 @@ interface Props {
   name: string | null;
   email: string;
   plan: string;
+  accountType: "personal" | "business";
+  birthDate: string | null;
 }
 
-export default function ProfileClient({ name, email, plan }: Props) {
+export default function ProfileClient({ name, email, plan, accountType, birthDate }: Props) {
   const [nameValue, setNameValue] = useState(name ?? "");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -77,9 +79,25 @@ export default function ProfileClient({ name, email, plan }: Props) {
         <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">계정 정보</h2>
         <div className="space-y-3">
           <div>
+            <p className="text-xs text-slate-400 dark:text-slate-500">계정 유형</p>
+            <p className="mt-0.5">
+              {accountType === "business" ? (
+                <span className="inline-block rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">사업자</span>
+              ) : (
+                <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">개인</span>
+              )}
+            </p>
+          </div>
+          <div>
             <p className="text-xs text-slate-400 dark:text-slate-500">이름</p>
             <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{nameValue || "—"}</p>
           </div>
+          {accountType !== "business" && (
+            <div>
+              <p className="text-xs text-slate-400 dark:text-slate-500">생년월일</p>
+              <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{birthDate || "—"}</p>
+            </div>
+          )}
           <div>
             <p className="text-xs text-slate-400 dark:text-slate-500">이메일</p>
             <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{email}</p>

@@ -18,6 +18,8 @@ export default async function ProfilePage() {
       name={user.user_metadata?.name ?? null}
       email={user.email ?? ""}
       plan={sub?.plan ?? "free"}
+      accountType={user.user_metadata?.account_type ?? "personal"}
+      birthDate={user.user_metadata?.birth_date ?? null}
     />
   );
 }
