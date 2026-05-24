@@ -30,6 +30,16 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  if ("account_type" in body) {
+    const { account_type } = body;
+    if (account_type !== "personal" && account_type !== "business") {
+      return NextResponse.json({ error: "올바르지 않은 계정 유형입니다." }, { status: 400 });
+    }
+    const { error } = await supabase.auth.updateUser({ data: { account_type } });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ ok: true });
+  }
+
   return NextResponse.json({ error: "변경할 항목이 없습니다." }, { status: 400 });
 }
 

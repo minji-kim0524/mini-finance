@@ -13,13 +13,18 @@ export default async function ProfilePage() {
     .eq("user_id", user.id)
     .single();
 
+  const metadata = user.user_metadata ?? {};
+  const hasBoth = "birth_date" in metadata && "business_number" in metadata;
+
   return (
     <ProfileClient
-      name={user.user_metadata?.name ?? null}
+      name={metadata.name ?? null}
       email={user.email ?? ""}
       plan={sub?.plan ?? "free"}
-      accountType={user.user_metadata?.account_type ?? "personal"}
-      birthDate={user.user_metadata?.birth_date ?? null}
+      accountType={metadata.account_type ?? "personal"}
+      birthDate={metadata.birth_date ?? null}
+      businessNumber={metadata.business_number ?? null}
+      hasBoth={hasBoth}
     />
   );
 }
