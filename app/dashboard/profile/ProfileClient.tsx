@@ -17,6 +17,11 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
+  const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
+  const [birthDateEditing, setBirthDateEditing] = useState(false);
+  const [birthDateSaving, setBirthDateSaving] = useState(false);
+  const [birthDateMessage, setBirthDateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -46,6 +51,31 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
       setNameMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
     } finally {
       setNameSaving(false);
+    }
+  }
+
+  async function HandleBirthDateSave(e: React.FormEvent) {
+    e.preventDefault();
+    setBirthDateSaving(true);
+    setBirthDateMessage(null);
+    try {
+      const res = await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ birth_date: birthDateValue || null }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setBirthDateMessage({ type: "error", text: json.error ?? "저장 실패" });
+      } else {
+        setBirthDateMessage({ type: "success", text: "생년월일이 저장되었습니다." });
+        setBirthDateEditing(false);
+        router.refresh();
+      }
+    } catch {
+      setBirthDateMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
+    } finally {
+      setBirthDateSaving(false);
     }
   }
 
@@ -95,7 +125,51 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
           {accountType !== "business" && (
             <div>
               <p className="text-xs text-slate-400 dark:text-slate-500">생년월일</p>
-              <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{birthDate || "—"}</p>
+              {birthDateEditing ? (
+                <form onSubmit={HandleBirthDateSave} className="mt-1.5 space-y-2">
+                  <input
+                    type="date"
+                    value={birthDateValue}
+                    onChange={(e) => setBirthDateValue(e.target.value)}
+                    max={new Date().toISOString().slice(0, 10)}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
+                  />
+                  {birthDateMessage && (
+                    <p className={`text-xs ${birthDateMessage.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+                      {birthDateMessage.text}
+                    </p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={birthDateSaving}
+                      className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {birthDateSaving ? "저장 중…" : "저장"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setBirthDateEditing(false); setBirthDateValue(birthDate ?? ""); setBirthDateMessage(null); }}
+                      className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                    >
+                      취소
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className={`text-sm font-medium ${birthDateValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
+                    {birthDateValue || "(입력값없음)"}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setBirthDateEditing(true); setBirthDateMessage(null); }}
+                    className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium text-blue-500 transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                  >
+                    편집
+                  </button>
+                </div>
+              )}
             </div>
           )}
           <div>
