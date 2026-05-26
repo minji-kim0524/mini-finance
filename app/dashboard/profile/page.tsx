@@ -20,6 +20,7 @@ export default async function ProfilePage() {
     <ProfileClient
       name={metadata.name ?? null}
       email={user.email ?? ""}
+      emailVerified={!!user.email_confirmed_at}
       plan={sub?.plan ?? "free"}
       accountType={metadata.account_type ?? "personal"}
       birthDate={metadata.birth_date ?? null}

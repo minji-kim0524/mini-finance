@@ -7,6 +7,7 @@ import { CreateClient } from "@/lib/supabase/client";
 interface Props {
   name: string | null;
   email: string;
+  emailVerified: boolean;
   plan: string;
   accountType: "personal" | "business";
   birthDate: string | null;
@@ -14,8 +15,9 @@ interface Props {
   hasBoth: boolean;
 }
 
-export default function ProfileClient({ name, email, plan, accountType, birthDate, businessNumber, hasBoth }: Props) {
+export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth }: Props) {
   const [nameValue, setNameValue] = useState(name ?? "");
+  const [nameEditing, setNameEditing] = useState(false);
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -71,6 +73,7 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
         setNameMessage({ type: "error", text: json.error ?? "저장 실패" });
       } else {
         setNameMessage({ type: "success", text: "이름이 변경되었습니다." });
+        setNameEditing(false);
         router.refresh();
       }
     } catch {
@@ -135,7 +138,7 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
         <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">계정 정보</h2>
         <div className="space-y-3">
           <div>
-            <p className="text-xs text-slate-400 dark:text-slate-500">계정 유형</p>
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">계정 유형</p>
             <div className="mt-1.5 flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
               {(["personal", "business"] as const).map((type) => (
                 <button
@@ -158,12 +161,56 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
             {typeError && <p className="mt-1 text-xs text-red-500">{typeError}</p>}
           </div>
           <div>
-            <p className="text-xs text-slate-400 dark:text-slate-500">이름</p>
-            <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{nameValue || "—"}</p>
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">이름</p>
+            {nameEditing ? (
+              <form onSubmit={HandleNameSave} className="mt-1.5 space-y-2">
+                <input
+                  type="text"
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  placeholder="이름을 입력하세요"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
+                />
+                {nameMessage && (
+                  <p className={`text-xs ${nameMessage.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
+                    {nameMessage.text}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={nameSaving || nameValue.trim() === (name ?? "")}
+                    className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {nameSaving ? "저장 중…" : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setNameEditing(false); setNameValue(name ?? ""); setNameMessage(null); }}
+                    className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  >
+                    취소
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-0.5 flex items-center gap-2">
+                <p className={`text-sm font-medium ${nameValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
+                  {nameValue || "(입력값없음)"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setNameEditing(true); setNameMessage(null); }}
+                  className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium text-blue-500 transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
+                  편집
+                </button>
+              </div>
+            )}
           </div>
           {activeType === "personal" && (
             <div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">생년월일</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">생년월일</p>
               {birthDateEditing ? (
                 <form onSubmit={HandleBirthDateSave} className="mt-1.5 space-y-2">
                   <input
@@ -213,18 +260,29 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
           )}
           {activeType === "business" && (
             <div>
-              <p className="text-xs text-slate-400 dark:text-slate-500">사업자등록번호</p>
+              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">사업자등록번호</p>
               <p className={`mt-0.5 text-sm font-medium ${businessNumber ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
                 {businessNumber || "(입력값없음)"}
               </p>
             </div>
           )}
           <div>
-            <p className="text-xs text-slate-400 dark:text-slate-500">이메일</p>
-            <p className="mt-0.5 text-sm font-medium text-slate-700 dark:text-slate-300">{email}</p>
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">이메일</p>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{email}</p>
+              {emailVerified && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
+                  <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="6" className="fill-green-500 dark:fill-green-500" />
+                    <path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  인증완료
+                </span>
+              )}
+            </div>
           </div>
           <div>
-            <p className="text-xs text-slate-400 dark:text-slate-500">요금제</p>
+            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">요금제</p>
             <p className="mt-0.5">
               {plan === "pro" ? (
                 <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
@@ -234,32 +292,6 @@ export default function ProfileClient({ name, email, plan, accountType, birthDat
             </p>
           </div>
         </div>
-      </section>
-
-      {/* 이름 변경 */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">이름 변경</h2>
-        <form onSubmit={HandleNameSave} className="space-y-3">
-          <input
-            type="text"
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            placeholder="이름을 입력하세요"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
-          />
-          {nameMessage && (
-            <p className={`text-sm ${nameMessage.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-              {nameMessage.text}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={nameSaving || nameValue.trim() === (name ?? "")}
-            className="rounded-xl bg-blue-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-          >
-            {nameSaving ? "저장 중…" : "저장"}
-          </button>
-        </form>
       </section>
 
       {/* 회원탈퇴 */}
