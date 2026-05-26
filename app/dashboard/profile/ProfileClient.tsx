@@ -136,7 +136,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {/* 계정 정보 */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
         <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">계정 정보</h2>
-        <div className="space-y-3">
+        <div className="space-y-5">
           <div>
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">계정 유형</p>
             <div className="mt-1.5 flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
@@ -194,7 +194,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
                 </div>
               </form>
             ) : (
-              <div className="mt-0.5 flex items-center gap-2">
+              <div className="mt-1 flex items-center gap-2">
                 <p className={`text-sm font-medium ${nameValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
                   {nameValue || "(입력값없음)"}
                 </p>
@@ -243,7 +243,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
                   </div>
                 </form>
               ) : (
-                <div className="mt-0.5 flex items-center gap-2">
+                <div className="mt-1 flex items-center gap-2">
                   <p className={`text-sm font-medium ${birthDateValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
                     {birthDateValue || "(입력값없음)"}
                   </p>
@@ -261,14 +261,14 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           {activeType === "business" && (
             <div>
               <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">사업자등록번호</p>
-              <p className={`mt-0.5 text-sm font-medium ${businessNumber ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
+              <p className={`mt-1 text-sm font-medium ${businessNumber ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
                 {businessNumber || "(입력값없음)"}
               </p>
             </div>
           )}
           <div>
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">이메일</p>
-            <div className="mt-0.5 flex items-center gap-1.5">
+            <div className="mt-1 flex items-center gap-1.5">
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{email}</p>
               {emailVerified && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
@@ -283,7 +283,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">요금제</p>
-            <p className="mt-0.5">
+            <p className="mt-1">
               {plan === "pro" ? (
                 <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
               ) : (
