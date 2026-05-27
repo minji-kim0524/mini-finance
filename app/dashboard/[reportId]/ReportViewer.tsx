@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import { useParams } from "next/navigation";
 import type { FinanceRow, AccountType, PLSummary } from "@/types/finance";
 import { CalcPLSummary } from "@/lib/aggregator";
+import { FormatKRW } from "@/lib/format";
 import MonthlyChart from "../MonthlyChart";
 
 type Tab = "dashboard" | "income" | "balance" | "classify";
@@ -15,10 +16,6 @@ function FmtNum(n: number): string {
   if (n === 0) return "-";
   const abs = Math.abs(n).toLocaleString("ko-KR");
   return n < 0 ? `(${abs})` : abs;
-}
-
-function FormatKRW(n: number) {
-  return n.toLocaleString("ko-KR") + "원";
 }
 
 function GroupByAccount(rows: FinanceRow[]): Map<string, number> {

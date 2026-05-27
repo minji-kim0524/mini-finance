@@ -10,6 +10,7 @@ import type { FinanceRow } from "@/types/finance";
 import { GroupByMonth, GroupByQuarter, GroupBySemiAnnual } from "@/lib/aggregator";
 import { UseTheme } from "@/components/ThemeProvider";
 import { TooltipFmt } from "@/lib/format";
+import { GetChartTheme } from "@/app/utils/analyticsUtils";
 
 type ChartType = "bar" | "line";
 type Period    = "monthly" | "quarterly" | "semiannual";
@@ -33,16 +34,10 @@ const series = [
 
 export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
   const { theme } = UseTheme();
-  const isDark = theme === "dark";
+  const { gridColor, tickColor, tooltipStyle } = GetChartTheme(theme === "dark");
 
   const [chartType, setChartType] = useState<ChartType>("bar");
   const [period, setPeriod]       = useState<Period>("monthly");
-
-  const gridColor   = isDark ? "#1e293b" : "#f1f5f9";
-  const tickColor   = isDark ? "#64748b" : "#94a3b8";
-  const tooltipStyle = isDark
-    ? { borderRadius: "12px", border: "1px solid #334155", fontSize: "12px", backgroundColor: "#1e293b", color: "#f1f5f9" }
-    : { borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px" };
 
   const data = useMemo(() => {
     if (rows.length === 0) return [];
