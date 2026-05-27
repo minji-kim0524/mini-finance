@@ -6,8 +6,29 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { ToKoreanAuthError } from "@/lib/authErrors";
 
 type AccountType = "personal" | "business";
+type BizVerifyStatus = "idle" | "loading" | "active" | "suspended" | "closed" | "invalid" | "error";
 
-const inputCls ="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700";
+const inputCls = "mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700";
+
+const bizStatusStyle: Record<BizVerifyStatus, string> = {
+  idle:      "",
+  loading:   "text-slate-500 dark:text-slate-400",
+  active:    "text-green-600 dark:text-green-400",
+  suspended: "text-amber-500 dark:text-amber-400",
+  closed:    "text-red-500 dark:text-red-400",
+  invalid:   "text-red-500 dark:text-red-400",
+  error:     "text-red-500 dark:text-red-400",
+};
+
+const bizStatusIcon: Record<BizVerifyStatus, string> = {
+  idle:      "",
+  loading:   "⏳",
+  active:    "✓",
+  suspended: "⚠",
+  closed:    "✗",
+  invalid:   "✗",
+  error:     "✗",
+};
 
 function Required() {
   return <span className="ml-1 text-red-500">*</span>;
@@ -23,12 +44,18 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [bizVerifyStatus, setBizVerifyStatus] = useState<BizVerifyStatus>("idle");
+  const [bizVerifyMessage, setBizVerifyMessage] = useState("");
+
   const supabase = CreateClient();
 
   function HandleAccountTypeChange(type: AccountType) {
     setAccountType(type);
     setIdentifier("");
     setError("");
+    setBizVerifyStatus("idle");
+    setBizVerifyMessage("");
   }
 
   function HandleBusinessNumberChange(value: string) {
@@ -37,13 +64,49 @@ export default function SignupPage() {
     if (digits.length > 5) formatted = `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
     else if (digits.length > 3) formatted = `${digits.slice(0, 3)}-${digits.slice(3)}`;
     setIdentifier(formatted);
+    // 번호가 바뀌면 인증 초기화
+    setBizVerifyStatus("idle");
+    setBizVerifyMessage("");
   }
+
+  async function HandleVerifyBusiness() {
+    if (identifier.replace(/\D/g, "").length !== 10) {
+      setBizVerifyStatus("error");
+      setBizVerifyMessage("사업자등록번호 10자리를 모두 입력해주세요.");
+      return;
+    }
+    setBizVerifyStatus("loading");
+    setBizVerifyMessage("조회 중…");
+    try {
+      const res = await fetch("/api/business-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ businessNumber: identifier }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setBizVerifyStatus("error");
+        setBizVerifyMessage(json.error ?? "조회에 실패했습니다.");
+        return;
+      }
+      setBizVerifyStatus(json.status as BizVerifyStatus);
+      setBizVerifyMessage(json.message);
+    } catch {
+      setBizVerifyStatus("error");
+      setBizVerifyMessage("네트워크 오류가 발생했습니다.");
+    }
+  }
+
+  const bizVerified = bizVerifyStatus === "active" || bizVerifyStatus === "suspended";
 
   async function HandleSignup() {
     setError("");
     if (!name.trim()) { setError(accountType === "personal" ? "이름을 입력해주세요." : "회사명을 입력해주세요."); return; }
     if (!identifier.trim()) { setError(accountType === "personal" ? "생년월일을 입력해주세요." : "사업자등록번호를 입력해주세요."); return; }
-    if (accountType === "business" && identifier.replace(/\D/g, "").length !== 10) { setError("사업자등록번호는 10자리여야 합니다. (예: 123-45-67890)"); return; }
+    if (accountType === "business") {
+      if (identifier.replace(/\D/g, "").length !== 10) { setError("사업자등록번호는 10자리여야 합니다. (예: 123-45-67890)"); return; }
+      if (!bizVerified) { setError("사업자등록번호 조회를 먼저 완료해주세요."); return; }
+    }
     if (password.length < 6) { setError("비밀번호는 최소 6자 이상이어야 합니다."); return; }
     if (password !== confirmPassword) { setError("비밀번호가 일치하지 않습니다."); return; }
 
@@ -117,36 +180,102 @@ export default function SignupPage() {
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {accountType === "personal" ? "이름" : "회사명"}<Required />
-            <input type="text" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"} className={inputCls} />
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
+              placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"}
+              className={inputCls}
+            />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-            {accountType === "personal" ? "생년월일" : <><span>사업자등록번호</span><Required /></>}
+          <div className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            {accountType === "personal"
+              ? "생년월일"
+              : <><span>사업자등록번호</span><Required /></>
+            }
             {accountType === "personal" ? (
-              <input type="date" value={identifier} onChange={(e) => setIdentifier(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} max={new Date().toISOString().slice(0, 10)} className={inputCls} />
+              <input
+                type="date"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
+                max={new Date().toISOString().slice(0, 10)}
+                className={inputCls}
+              />
             ) : (
-              <input type="text" value={identifier} onChange={(e) => HandleBusinessNumberChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="000-00-00000" inputMode="numeric" className={inputCls} />
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={identifier}
+                  onChange={(e) => HandleBusinessNumberChange(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") HandleVerifyBusiness(); }}
+                  placeholder="000-00-00000"
+                  inputMode="numeric"
+                  className="flex-1 rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700"
+                />
+                <button
+                  type="button"
+                  onClick={HandleVerifyBusiness}
+                  disabled={bizVerifyStatus === "loading" || identifier.replace(/\D/g, "").length !== 10}
+                  className="shrink-0 rounded-2xl bg-slate-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40 dark:bg-slate-600 dark:hover:bg-slate-500"
+                >
+                  {bizVerifyStatus === "loading" ? "조회 중…" : "확인"}
+                </button>
+              </div>
             )}
-          </label>
+            {accountType === "business" && bizVerifyStatus !== "idle" && (
+              <p className={`mt-1.5 text-xs font-medium ${bizStatusStyle[bizVerifyStatus]}`}>
+                {bizStatusIcon[bizVerifyStatus]} {bizVerifyMessage}
+              </p>
+            )}
+          </div>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             이메일<Required />
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="example@email.com" className={inputCls} />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
+              placeholder="example@email.com"
+              className={inputCls}
+            />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호<Required />
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="6자 이상" className={inputCls} />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
+              placeholder="6자 이상"
+              className={inputCls}
+            />
           </label>
 
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호 확인<Required />
-            <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }} placeholder="비밀번호 확인" className={inputCls} />
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
+              placeholder="비밀번호 확인"
+              className={inputCls}
+            />
           </label>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-          <button type="button" onClick={HandleSignup} disabled={loading} className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60">
+          <button
+            type="button"
+            onClick={HandleSignup}
+            disabled={loading}
+            className="w-full rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+          >
             {loading ? "가입 중…" : "회원가입"}
           </button>
         </div>
