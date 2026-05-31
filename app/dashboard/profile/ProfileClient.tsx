@@ -15,9 +15,22 @@ interface Props {
   hasBoth: boolean;
 }
 
+function CheckDot({ filled }: { filled: boolean }) {
+  return filled ? (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="10" fill="#22c55e" />
+      <path d="M6 10l2.5 2.5 5.5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) : (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <circle cx="10" cy="10" r="9" stroke="#d1d5db" strokeWidth="1.5" />
+      <path d="M6 10l2.5 2.5 5.5-5" stroke="#d1d5db" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth }: Props) {
   const [nameValue, setNameValue] = useState(name ?? "");
-  const [nameEditing, setNameEditing] = useState(false);
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -25,7 +38,6 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   const [typeError, setTypeError] = useState<string | null>(null);
 
   const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
-  const [birthDateEditing, setBirthDateEditing] = useState(false);
   const [birthDateSaving, setBirthDateSaving] = useState(false);
   const [birthDateMessage, setBirthDateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -73,7 +85,6 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         setNameMessage({ type: "error", text: json.error ?? "저장 실패" });
       } else {
         setNameMessage({ type: "success", text: "이름이 변경되었습니다." });
-        setNameEditing(false);
         router.refresh();
       }
     } catch {
@@ -98,7 +109,6 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         setBirthDateMessage({ type: "error", text: json.error ?? "저장 실패" });
       } else {
         setBirthDateMessage({ type: "success", text: "생년월일이 저장되었습니다." });
-        setBirthDateEditing(false);
         router.refresh();
       }
     } catch {
@@ -130,194 +140,200 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   const deleteConfirmPhrase = "탈퇴하겠습니다";
 
   return (
-    <div className="mx-auto max-w-lg space-y-8">
-      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">프로필 설정</h1>
+    <div className="mx-auto max-w-lg space-y-8 px-2 py-6">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">프로필 설정</h1>
 
-      {/* 계정 정보 */}
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-        <h2 className="mb-4 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">계정 정보</h2>
-        <div className="space-y-5">
-          <div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">계정 유형</p>
-            <div className="mt-1.5 flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
-              {(["personal", "business"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => HandleTypeSwitch(type)}
-                  disabled={!hasBoth}
-                  className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${
-                    activeType === type
-                      ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
-                      : hasBoth
-                        ? "cursor-pointer text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                        : "cursor-not-allowed text-slate-300 dark:text-slate-600"
-                  }`}
-                >
-                  {type === "personal" ? "개인" : "사업자"}
-                </button>
-              ))}
-            </div>
-            {typeError && <p className="mt-1 text-xs text-red-500">{typeError}</p>}
+      {/* 프로필 아바타 */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <circle cx="24" cy="18" r="9" fill="#9ca3af" />
+              <path d="M8 44c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#9ca3af" />
+            </svg>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">이름</p>
-            {nameEditing ? (
-              <form onSubmit={HandleNameSave} className="mt-1.5 space-y-2">
-                <input
-                  type="text"
-                  value={nameValue}
-                  onChange={(e) => setNameValue(e.target.value)}
-                  placeholder="이름을 입력하세요"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
-                />
-                {nameMessage && (
-                  <p className={`text-xs ${nameMessage.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-                    {nameMessage.text}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="submit"
-                    disabled={nameSaving || nameValue.trim() === (name ?? "")}
-                    className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    {nameSaving ? "저장 중…" : "저장"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setNameEditing(false); setNameValue(name ?? ""); setNameMessage(null); }}
-                    className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                  >
-                    취소
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="mt-1 flex items-center gap-2">
-                <p className={`text-sm font-medium ${nameValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
-                  {nameValue || "(입력값없음)"}
-                </p>
-                <button
-                  type="button"
-                  onClick={() => { setNameEditing(true); setNameMessage(null); }}
-                  className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium text-blue-500 transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  편집
-                </button>
-              </div>
+          <button
+            type="button"
+            aria-label="프로필 사진 변경"
+            className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-gray-400 transition hover:bg-gray-500 dark:bg-gray-600"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* 계정 유형 */}
+      <div className="space-y-2">
+        <span className="text-base font-bold text-gray-900 dark:text-gray-100">계정 유형</span>
+        <div className="flex overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+          {(["personal", "business"] as const).map((type) => (
+            <button
+              key={type}
+              type="button"
+              onClick={() => HandleTypeSwitch(type)}
+              disabled={!hasBoth}
+              className={`flex-1 py-3 text-sm font-semibold transition ${
+                activeType === type
+                  ? "rounded-xl border border-green-500 bg-white text-green-500 dark:bg-gray-900"
+                  : hasBoth
+                    ? "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    : "cursor-not-allowed text-gray-300 dark:text-gray-600"
+              }`}
+            >
+              {type === "personal" ? "개인" : "사업자"}
+            </button>
+          ))}
+        </div>
+        {typeError && <p className="text-sm text-red-500">{typeError}</p>}
+      </div>
+
+      {/* 이름 */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">이름</span>
+            <CheckDot filled={!!nameValue.trim()} />
+          </div>
+          {nameMessage && (
+            <span className={`text-sm font-medium ${nameMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+              {nameMessage.text}
+            </span>
+          )}
+        </div>
+        <form
+          onSubmit={HandleNameSave}
+          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900"
+        >
+          <input
+            type="text"
+            value={nameValue}
+            onChange={(e) => { setNameValue(e.target.value); setNameMessage(null); }}
+            placeholder="이름을 입력하세요"
+            className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
+          />
+          <button
+            type="submit"
+            disabled={nameSaving || nameValue.trim() === (name ?? "")}
+            className="rounded-lg bg-green-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+          >
+            {nameSaving ? "저장 중…" : "저장"}
+          </button>
+        </form>
+      </div>
+
+      {/* 생년월일 (개인) */}
+      {activeType === "personal" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base font-bold text-gray-900 dark:text-gray-100">생년월일</span>
+              <CheckDot filled={!!birthDateValue} />
+            </div>
+            {birthDateMessage && (
+              <span className={`text-sm font-medium ${birthDateMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+                {birthDateMessage.text}
+              </span>
             )}
           </div>
-          {activeType === "personal" && (
-            <div>
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">생년월일</p>
-              {birthDateEditing ? (
-                <form onSubmit={HandleBirthDateSave} className="mt-1.5 space-y-2">
-                  <input
-                    type="date"
-                    value={birthDateValue}
-                    onChange={(e) => setBirthDateValue(e.target.value)}
-                    max={new Date().toISOString().slice(0, 10)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-400"
-                  />
-                  {birthDateMessage && (
-                    <p className={`text-xs ${birthDateMessage.type === "success" ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
-                      {birthDateMessage.text}
-                    </p>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      type="submit"
-                      disabled={birthDateSaving}
-                      className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {birthDateSaving ? "저장 중…" : "저장"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setBirthDateEditing(false); setBirthDateValue(birthDate ?? ""); setBirthDateMessage(null); }}
-                      className="rounded-lg border border-slate-200 px-4 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-                    >
-                      취소
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <div className="mt-1 flex items-center gap-2">
-                  <p className={`text-sm font-medium ${birthDateValue ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
-                    {birthDateValue || "(입력값없음)"}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => { setBirthDateEditing(true); setBirthDateMessage(null); }}
-                    className="cursor-pointer rounded-md px-2 py-0.5 text-xs font-medium text-blue-500 transition hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  >
-                    편집
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          {activeType === "business" && (
-            <div>
-              <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">사업자등록번호</p>
-              <p className={`mt-1 text-sm font-medium ${businessNumber ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"}`}>
-                {businessNumber || "(입력값없음)"}
-              </p>
-            </div>
-          )}
-          <div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">이메일</p>
-            <div className="mt-1 flex items-center gap-1.5">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{email}</p>
-              {emailVerified && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-                  <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                    <circle cx="6" cy="6" r="6" className="fill-green-500 dark:fill-green-500" />
-                    <path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  인증완료
-                </span>
-              )}
-            </div>
+          <form
+            onSubmit={HandleBirthDateSave}
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900"
+          >
+            <input
+              type="date"
+              value={birthDateValue}
+              onChange={(e) => { setBirthDateValue(e.target.value); setBirthDateMessage(null); }}
+              max={new Date().toISOString().slice(0, 10)}
+              className="flex-1 bg-transparent text-sm text-gray-900 outline-none scheme-light placeholder:text-gray-400 dark:text-gray-100 dark:scheme-dark"
+            />
+            <button
+              type="submit"
+              disabled={birthDateSaving || birthDateValue === (birthDate ?? "")}
+              className="rounded-lg bg-green-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+            >
+              {birthDateSaving ? "저장 중…" : "저장"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* 사업자등록번호 (사업자) */}
+      {activeType === "business" && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">사업자등록번호</span>
+            <CheckDot filled={!!businessNumber} />
           </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-600 dark:text-slate-300">요금제</p>
-            <p className="mt-1">
-              {plan === "pro" ? (
-                <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
-              ) : (
-                <span className="inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">무료</span>
-              )}
-            </p>
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
+            <span className={`text-sm ${businessNumber ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"}`}>
+              {businessNumber ?? "(입력값없음)"}
+            </span>
           </div>
         </div>
-      </section>
+      )}
+
+      {/* 이메일 */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">이메일</span>
+          <CheckDot filled={!!email} />
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
+          <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{email}</span>
+          {emailVerified && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
+              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="6" fill="#22c55e" />
+                <path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              인증완료
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* 요금제 */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">요금제</span>
+          <CheckDot filled={true} />
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
+          {plan === "pro" ? (
+            <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
+          ) : (
+            <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">무료</span>
+          )}
+        </div>
+      </div>
 
       {/* 세금계산서 (사업자 전용) */}
       {activeType === "business" && (
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
-          <h2 className="mb-1 text-sm font-semibold text-slate-500 uppercase tracking-wide dark:text-slate-400">세금계산서</h2>
-          <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+        <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">세금계산서</h2>
+          <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
             유료 요금제 이용 시 해당 월 결제 금액에 대한 세금계산서를 발행할 수 있습니다.
           </p>
           <button
             type="button"
             disabled={plan === "free"}
-            className="rounded-xl border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:disabled:border-slate-700 dark:disabled:text-slate-600"
+            className="rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:disabled:border-gray-700 dark:disabled:text-gray-600"
           >
             세금계산서 발행
           </button>
           {plan === "free" && (
-            <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">유료 요금제 이용 시 활성화됩니다.</p>
+            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">유료 요금제 이용 시 활성화됩니다.</p>
           )}
         </section>
       )}
 
       {/* 회원탈퇴 */}
-      <section className="rounded-2xl border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-slate-900">
-        <h2 className="mb-1 text-sm font-semibold text-red-500 uppercase tracking-wide">위험 구역</h2>
-        <p className="mb-4 text-xs text-slate-500 dark:text-slate-400">
+      <section className="rounded-2xl border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-gray-900">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-red-500">위험 구역</h2>
+        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
           계정을 삭제하면 모든 데이터(업로드 내역, 분석 결과)가 영구적으로 삭제되며 복구할 수 없습니다.
         </p>
         {!showDeleteConfirm ? (
@@ -330,7 +346,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           </button>
         ) : (
           <div className="space-y-3">
-            <p className="text-sm text-slate-700 dark:text-slate-300">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
               계속하려면 아래 입력란에{" "}
               <strong className="text-red-500">{deleteConfirmPhrase}</strong>
               을 입력하세요.
@@ -340,16 +356,14 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
               value={deleteInput}
               onChange={(e) => setDeleteInput(e.target.value)}
               placeholder={deleteConfirmPhrase}
-              className="w-full rounded-xl border border-red-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-900/50 dark:bg-slate-800 dark:text-slate-100"
+              className="w-full rounded-xl border border-red-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-900/50 dark:bg-gray-800 dark:text-gray-100"
             />
-            {deleteError && (
-              <p className="text-sm text-red-500">{deleteError}</p>
-            )}
+            {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => { setShowDeleteConfirm(false); setDeleteInput(""); setDeleteError(null); }}
-                className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 취소
               </button>
