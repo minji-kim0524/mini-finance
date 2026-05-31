@@ -41,6 +41,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
   const [birthDateSaving, setBirthDateSaving] = useState(false);
   const [birthDateMessage, setBirthDateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
@@ -109,6 +110,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         setBirthDateMessage({ type: "error", text: json.error ?? "저장 실패" });
       } else {
         setBirthDateMessage({ type: "success", text: "생년월일이 저장되었습니다." });
+        setShowDatePicker(false);
         router.refresh();
       }
     } catch {
@@ -238,18 +240,47 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
               </span>
             )}
           </div>
-          <DateWheelPicker
-            value={birthDateValue}
-            onChange={(v) => { setBirthDateValue(v); setBirthDateMessage(null); }}
-          />
-          <button
-            type="button"
-            onClick={HandleBirthDateSave}
-            disabled={birthDateSaving || birthDateValue === (birthDate ?? "")}
-            className="w-full rounded-xl bg-green-500 py-2 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
-          >
-            {birthDateSaving ? "저장 중…" : "저장"}
-          </button>
+          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
+            <span className={`flex-1 text-sm ${birthDateValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}>
+              {birthDateValue
+                ? `${parseInt(birthDateValue.split("-")[0], 10)}년 ${parseInt(birthDateValue.split("-")[1], 10)}월`
+                : "생년월일을 입력해주세요"}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (!showDatePicker && !birthDateValue) {
+                  setBirthDateValue(`${new Date().getFullYear()}-01-01`);
+                }
+                setShowDatePicker((v) => !v);
+              }}
+              aria-label="날짜 선택"
+              className="text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+            </button>
+          </div>
+          {showDatePicker && (
+            <>
+              <DateWheelPicker
+                value={birthDateValue}
+                onChange={(v) => { setBirthDateValue(v); setBirthDateMessage(null); }}
+              />
+              <button
+                type="button"
+                onClick={HandleBirthDateSave}
+                disabled={birthDateSaving || birthDateValue === (birthDate ?? "")}
+                className="w-full rounded-xl bg-green-500 py-2 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+              >
+                {birthDateSaving ? "저장 중…" : "저장"}
+              </button>
+            </>
+          )}
         </div>
       )}
 
