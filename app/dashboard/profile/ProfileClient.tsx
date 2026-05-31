@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
-import DateWheelPicker from "./DateWheelPicker";
+import BirthDatePicker from "./BirthDatePicker";
 
 interface Props {
   name: string | null;
@@ -96,14 +96,15 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
     }
   }
 
-  async function HandleBirthDateSave() {
+  async function HandleConfirmDate(dateStr: string) {
+    setBirthDateValue(dateStr);
     setBirthDateSaving(true);
     setBirthDateMessage(null);
     try {
       const res = await fetch("/api/user", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birth_date: birthDateValue || null }),
+        body: JSON.stringify({ birth_date: dateStr }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -243,17 +244,12 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
             <span className={`flex-1 text-sm ${birthDateValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}>
               {birthDateValue
-                ? `${parseInt(birthDateValue.split("-")[0], 10)}년 ${parseInt(birthDateValue.split("-")[1], 10)}월`
+                ? birthDateValue.replace(/-/g, ".")
                 : "생년월일을 입력해주세요"}
             </span>
             <button
               type="button"
-              onClick={() => {
-                if (!showDatePicker && !birthDateValue) {
-                  setBirthDateValue(`${new Date().getFullYear()}-01-01`);
-                }
-                setShowDatePicker((v) => !v);
-              }}
+              onClick={() => setShowDatePicker((v) => !v)}
               aria-label="날짜 선택"
               className="text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-300"
             >
@@ -266,20 +262,11 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
             </button>
           </div>
           {showDatePicker && (
-            <>
-              <DateWheelPicker
-                value={birthDateValue}
-                onChange={(v) => { setBirthDateValue(v); setBirthDateMessage(null); }}
-              />
-              <button
-                type="button"
-                onClick={HandleBirthDateSave}
-                disabled={birthDateSaving || birthDateValue === (birthDate ?? "")}
-                className="w-full rounded-xl bg-green-500 py-2 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
-              >
-                {birthDateSaving ? "저장 중…" : "저장"}
-              </button>
-            </>
+            <BirthDatePicker
+              value={birthDateValue}
+              onConfirm={HandleConfirmDate}
+              loading={birthDateSaving}
+            />
           )}
         </div>
       )}
