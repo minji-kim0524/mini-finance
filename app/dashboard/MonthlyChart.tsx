@@ -27,9 +27,9 @@ const chartOptions: { value: ChartType; label: string }[] = [
 ];
 
 const series = [
-  { key: "revenue", name: "매출",    color: "#3b82f6" },
-  { key: "cogs",    name: "매출원가", color: "#f87171" },
-  { key: "expense", name: "판관비",  color: "#fb923c" },
+  { key: "revenue", name: "매출",    color: "#0066cc" },
+  { key: "cogs",    name: "매출원가", color: "#dc3545" },
+  { key: "expense", name: "판관비",  color: "#FF8C00" },
 ];
 
 export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
@@ -107,7 +107,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
             <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
             <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "16px" }} />
             {series.map((s) => (
-              <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={[4, 4, 0, 0]} />
+              <Bar key={s.key} dataKey={s.key} name={s.name} fill={s.color} radius={0} />
             ))}
           </BarChart>
         ) : (
