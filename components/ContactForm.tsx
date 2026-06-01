@@ -6,7 +6,7 @@ const TO = "always00524@gmail.com";
 
 export default function ContactFooter() {
   return (
-    <footer className="flex items-center justify-center border-t border-slate-200 py-4 dark:border-slate-800">
+    <footer className="flex items-center justify-end border-t border-slate-200 px-6 py-4 dark:border-slate-800">
       <a
         href={`mailto:${TO}?subject=${encodeURIComponent("[고객지원] 문의드립니다")}`}
         aria-label="의견 보내기"
