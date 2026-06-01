@@ -50,9 +50,11 @@ export function GroupByYear(rows: FinanceRow[]): MonthlyData[] {
 export interface PredictPoint {
   month: string;
   revenue: number | null;
-  profit: number | null;
+  cogs: number | null;
+  expense: number | null;
   predictRevenue: number | null;
-  predictProfit: number | null;
+  predictCogs: number | null;
+  predictExpense: number | null;
 }
 
 function LinReg(values: number[]): { slope: number; intercept: number } {
@@ -75,26 +77,32 @@ export function BuildPredictSeries(rows: FinanceRow[], futureMonths = 3): Predic
   const monthly = GroupByMonth(rows);
   if (monthly.length === 0) return [];
 
-  const revenues = monthly.map((d) => d.revenue);
-  const profits  = monthly.map((d) => d.revenue - d.cogs - d.expense);
-  const revReg   = LinReg(revenues);
-  const profReg  = LinReg(profits);
-  const n        = monthly.length;
+  const revenues  = monthly.map((d) => d.revenue);
+  const cogsList  = monthly.map((d) => d.cogs);
+  const expenses  = monthly.map((d) => d.expense);
+  const revReg    = LinReg(revenues);
+  const cogsReg   = LinReg(cogsList);
+  const expReg    = LinReg(expenses);
+  const n         = monthly.length;
 
   const actual: PredictPoint[] = monthly.map((d, i) => ({
     month:          d.month,
     revenue:        d.revenue,
-    profit:         d.revenue - d.cogs - d.expense,
+    cogs:           d.cogs,
+    expense:        d.expense,
     predictRevenue: i === n - 1 ? d.revenue : null,
-    predictProfit:  i === n - 1 ? d.revenue - d.cogs - d.expense : null,
+    predictCogs:    i === n - 1 ? d.cogs : null,
+    predictExpense: i === n - 1 ? d.expense : null,
   }));
 
   const future: PredictPoint[] = Array.from({ length: futureMonths }, (_, i) => ({
     month:          AddMonths(monthly[n - 1].month, i + 1),
     revenue:        null,
-    profit:         null,
+    cogs:           null,
+    expense:        null,
     predictRevenue: Math.round(revReg.intercept + revReg.slope * (n + i)),
-    predictProfit:  Math.round(profReg.intercept + profReg.slope * (n + i)),
+    predictCogs:    Math.round(cogsReg.intercept + cogsReg.slope * (n + i)),
+    predictExpense: Math.round(expReg.intercept + expReg.slope * (n + i)),
   }));
 
   return [...actual, ...future];

@@ -166,9 +166,9 @@ export default function AnalyticsDashboard({
                       />
                       <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
                       <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} />
-                      <Bar dataKey="revenue" name="매출"     fill="#3b82f6" radius={[4,4,0,0]} />
-                      <Bar dataKey="cogs"    name="매출원가" fill="#f87171" radius={[4,4,0,0]} />
-                      <Bar dataKey="expense" name="판관비"   fill="#fb923c" radius={[4,4,0,0]} />
+                      <Bar dataKey="revenue" name="매출"     fill="#0066cc" radius={0} />
+                      <Bar dataKey="cogs"    name="매출원가" fill="#dc3545" radius={0} />
+                      <Bar dataKey="expense" name="판관비"   fill="#FF8C00" radius={0} />
                     </BarChart>
                   </ResponsiveContainer>
                 </>
@@ -177,35 +177,59 @@ export default function AnalyticsDashboard({
               {chartTab === "predict" && (
                 <>
                   <div className="mb-5 flex items-center justify-between">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      실선 = 실적 &nbsp;·&nbsp; 점선 = 3개월 예측 (선형회귀)
-                    </p>
                     <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                      월별
+                      월별 · 3개월 예측 (선형회귀)
                     </span>
+                    <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                      <span className="flex items-center gap-1.5">
+                        <svg width="24" height="10" className="shrink-0"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" strokeWidth="2" /></svg>
+                        실적
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <svg width="24" height="10" className="shrink-0"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" strokeWidth="2" strokeDasharray="6 4" /></svg>
+                        예측
+                      </span>
+                    </div>
                   </div>
                   {predictData.length < 2 ? (
                     <EmptyChartMessage className="py-12">예측을 위한 데이터가 부족합니다 (최소 2개월 필요)</EmptyChartMessage>
                   ) : (
-                    <ResponsiveContainer width="100%" height={280}>
-                      <LineChart data={predictData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                        <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
-                        <YAxis
-                          tickFormatter={(v) => `${(v / 10000).toLocaleString("ko-KR")}만`}
-                          tick={{ fontSize: 11, fill: tickColor }}
-                          width={56}
-                          axisLine={false}
-                          tickLine={false}
-                        />
-                        <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
-                        <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} />
-                        <Line type="monotone" dataKey="revenue"        name="매출 (실적)"     stroke="#3b82f6" strokeWidth={2} dot={{ r: 4, fill: "#3b82f6", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
-                        <Line type="monotone" dataKey="profit"         name="영업이익 (실적)" stroke="#34d399" strokeWidth={2} dot={{ r: 4, fill: "#34d399", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
-                        <Line type="monotone" dataKey="predictRevenue" name="매출 (예측)"     stroke="#3b82f6" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#93c5fd", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
-                        <Line type="monotone" dataKey="predictProfit"  name="영업이익 (예측)" stroke="#34d399" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#6ee7b7", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <LineChart data={predictData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
+                          <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
+                          <YAxis
+                            tickFormatter={(v) => `${(v / 10000).toLocaleString("ko-KR")}만`}
+                            tick={{ fontSize: 11, fill: tickColor }}
+                            width={56}
+                            axisLine={false}
+                            tickLine={false}
+                          />
+                          <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
+                          <Line type="monotone" dataKey="revenue"        name="매출 (실적)"     stroke="#0066cc" strokeWidth={2} dot={{ r: 4, fill: "#0066cc", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
+                          <Line type="monotone" dataKey="cogs"           name="매출원가 (실적)" stroke="#dc3545" strokeWidth={2} dot={{ r: 4, fill: "#dc3545", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
+                          <Line type="monotone" dataKey="expense"        name="판관비 (실적)"   stroke="#FF8C00" strokeWidth={2} dot={{ r: 4, fill: "#FF8C00", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
+                          <Line type="monotone" dataKey="predictRevenue" name="매출 (예측)"     stroke="#0066cc" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#0066cc", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
+                          <Line type="monotone" dataKey="predictCogs"    name="매출원가 (예측)" stroke="#dc3545" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#dc3545", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
+                          <Line type="monotone" dataKey="predictExpense" name="판관비 (예측)"   stroke="#FF8C00" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#FF8C00", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
+                        </LineChart>
+                      </ResponsiveContainer>
+                      <div className="mt-4 flex items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: "#0066cc" }} />
+                          매출
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: "#dc3545" }} />
+                          매출원가
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: "#FF8C00" }} />
+                          판관비
+                        </span>
+                      </div>
+                    </>
                   )}
                 </>
               )}
