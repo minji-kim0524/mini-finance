@@ -4,7 +4,7 @@ import Link from "next/link";
 import UserMenu from "@/components/UserMenu";
 import Sidebar from "@/components/Sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
-import ContactForm from "@/components/ContactForm";
+import ContactFooter from "@/components/ContactForm";
 
 export default async function DashboardLayout({
   children,
@@ -45,7 +45,7 @@ export default async function DashboardLayout({
           />
         </header>
         <main className="flex-1 overflow-auto px-6 py-8">{children}</main>
-        <ContactForm />
+        <ContactFooter />
       </div>
     </div>
   );
