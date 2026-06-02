@@ -53,6 +53,7 @@ export default function AnalyticsDashboard({
   const [loading, setLoading]       = useState(false);
   const [chartTab, setChartTab]     = useState<ChartTab>("bar");
   const [barPeriod, setBarPeriod]   = useState<BarPeriod>("monthly");
+  const [selectedYear, setSelectedYear] = useState<string>("");
 
   async function HandleReportChange(id: string) {
     setSelectedId(id);
@@ -72,13 +73,26 @@ export default function AnalyticsDashboard({
     [rows],
   );
 
+  const availableYears = useMemo(() => {
+    const years = new Set(plRows.map((r) => r.date.slice(0, 4)));
+    return Array.from(years).sort();
+  }, [plRows]);
+
+  const effectiveYear = (selectedYear && availableYears.includes(selectedYear))
+    ? selectedYear
+    : (availableYears[availableYears.length - 1] ?? "");
+
   const barData = useMemo(() => {
     if (plRows.length === 0) return [];
+    if (barPeriod === "monthly" && availableYears.length >= 2) {
+      const filtered = plRows.filter((r) => r.date.slice(0, 4) === effectiveYear);
+      return GroupByMonth(filtered);
+    }
     if (barPeriod === "quarterly")  return GroupByQuarter(plRows);
     if (barPeriod === "semiannual") return GroupBySemiAnnual(plRows);
     if (barPeriod === "yearly")     return GroupByYear(plRows);
     return GroupByMonth(plRows);
-  }, [plRows, barPeriod]);
+  }, [plRows, barPeriod, effectiveYear, availableYears]);
 
   const predictData = useMemo(() => BuildPredictSeries(plRows, 3), [plRows]);
 
@@ -149,9 +163,18 @@ export default function AnalyticsDashboard({
             <>
               {chartTab === "bar" && (
                 <>
-                  <div className="mb-5 flex items-center justify-between">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">매출 · 매출원가 · 판관비</p>
-                    <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} />
+                  <div className="mb-5 flex items-start justify-between">
+                    <p className="pt-1.5 text-xs text-slate-500 dark:text-slate-400">매출 · 매출원가 · 판관비</p>
+                    <div className="flex flex-col items-end gap-2">
+                      <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} />
+                      {barPeriod === "monthly" && availableYears.length >= 2 && (
+                        <TabSwitcher
+                          tabs={availableYears.map((y) => ({ value: y, label: `${y}년` }))}
+                          active={effectiveYear}
+                          onChange={setSelectedYear}
+                        />
+                      )}
+                    </div>
                   </div>
                   <ResponsiveContainer width="100%" height={260}>
                     <BarChart data={barData} barCategoryGap="30%" barGap={3}>
