@@ -84,14 +84,12 @@ export default function AnalyticsDashboard({
 
   const barData = useMemo(() => {
     if (plRows.length === 0) return [];
-    if (barPeriod === "monthly" && availableYears.length >= 2) {
-      const filtered = plRows.filter((r) => r.date.slice(0, 4) === effectiveYear);
-      return GroupByMonth(filtered);
-    }
-    if (barPeriod === "quarterly")  return GroupByQuarter(plRows);
-    if (barPeriod === "semiannual") return GroupBySemiAnnual(plRows);
-    if (barPeriod === "yearly")     return GroupByYear(plRows);
-    return GroupByMonth(plRows);
+    const filterable = barPeriod !== "yearly" && availableYears.length >= 2;
+    const rows = filterable ? plRows.filter((r) => r.date.slice(0, 4) === effectiveYear) : plRows;
+    if (barPeriod === "quarterly")  return GroupByQuarter(rows);
+    if (barPeriod === "semiannual") return GroupBySemiAnnual(rows);
+    if (barPeriod === "yearly")     return GroupByYear(rows);
+    return GroupByMonth(rows);
   }, [plRows, barPeriod, effectiveYear, availableYears]);
 
   const predictData = useMemo(() => BuildPredictSeries(plRows, 3), [plRows]);
@@ -167,7 +165,7 @@ export default function AnalyticsDashboard({
                     <p className="pt-1.5 text-xs text-slate-500 dark:text-slate-400">매출 · 매출원가 · 판관비</p>
                     <div className="flex flex-col items-end gap-2">
                       <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} />
-                      {barPeriod === "monthly" && availableYears.length >= 2 && (
+                      {barPeriod !== "yearly" && availableYears.length >= 2 && (
                         <TabSwitcher
                           tabs={availableYears.map((y) => ({ value: y, label: `${y}년` }))}
                           active={effectiveYear}
