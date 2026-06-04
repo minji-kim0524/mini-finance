@@ -31,7 +31,7 @@ export function GetChartTheme(isDark: boolean) {
     tickColor,
     tooltipStyle: isDark
       ? { borderRadius: "12px", border: "1px solid #334155", fontSize: "12px", backgroundColor: "#1e293b", color: "#f1f5f9" }
-      : { borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px" },
+      : { borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "12px", backgroundColor: "#ffffff" },
     axisTick: { fontSize: 11, fill: tickColor },
   };
 }
