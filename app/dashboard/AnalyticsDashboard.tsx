@@ -268,7 +268,34 @@ export default function AnalyticsDashboard({
                             axisLine={false}
                             tickLine={false}
                           />
-                          <Tooltip formatter={TooltipFmt} contentStyle={tooltipStyle} />
+                          <Tooltip
+                            content={({ active, payload, label }) => {
+                              if (!active || !payload?.length) return null;
+                              const hasActual = payload.some(
+                                (p) => !String(p.dataKey ?? "").startsWith("predict") && p.value != null,
+                              );
+                              const items = payload.filter(
+                                (p) =>
+                                  p.value != null &&
+                                  (hasActual
+                                    ? !String(p.dataKey ?? "").startsWith("predict")
+                                    : String(p.dataKey ?? "").startsWith("predict")),
+                              );
+                              if (!items.length) return null;
+                              return (
+                                <div style={{ ...tooltipStyle, padding: "8px 12px" }}>
+                                  <p style={{ marginBottom: 4, fontWeight: 600 }}>{String(label ?? "")}</p>
+                                  {items.map((p) => (
+                                    <p key={String(p.dataKey ?? "")} style={{ margin: "2px 0" }}>
+                                      <span style={{ color: p.color }}>● </span>
+                                      {String(p.name ?? "")}:{" "}
+                                      {typeof p.value === "number" ? p.value.toLocaleString("ko-KR") + "원" : ""}
+                                    </p>
+                                  ))}
+                                </div>
+                              );
+                            }}
+                          />
                           <Line type="monotone" dataKey="revenue"        name="매출 (실적)"     stroke="#0066cc" strokeWidth={2} dot={{ r: 4, fill: "#0066cc", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
                           <Line type="monotone" dataKey="cogs"           name="매출원가 (실적)" stroke="#dc3545" strokeWidth={2} dot={{ r: 4, fill: "#dc3545", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
                           <Line type="monotone" dataKey="expense"        name="판관비 (실적)"   stroke="#FF8C00" strokeWidth={2} dot={{ r: 4, fill: "#FF8C00", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={false} />
