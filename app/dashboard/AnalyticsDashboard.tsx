@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import {
   BarChart, Bar,
   LineChart, Line,
@@ -54,6 +54,7 @@ export default function AnalyticsDashboard({
   const [chartTab, setChartTab]     = useState<ChartTab>("bar");
   const [barPeriod, setBarPeriod]   = useState<BarPeriod>("monthly");
   const [selectedYear, setSelectedYear] = useState<string>("");
+  const [predictYear, setPredictYear]   = useState<string>("");
 
   async function HandleReportChange(id: string) {
     setSelectedId(id);
@@ -82,6 +83,10 @@ export default function AnalyticsDashboard({
     ? selectedYear
     : (availableYears[availableYears.length - 1] ?? "");
 
+  const predictEffectiveYear = (predictYear && availableYears.includes(predictYear))
+    ? predictYear
+    : (availableYears[availableYears.length - 1] ?? "");
+
   const barData = useMemo(() => {
     if (plRows.length === 0) return [];
     const filterable = barPeriod !== "yearly" && availableYears.length >= 2;
@@ -92,7 +97,30 @@ export default function AnalyticsDashboard({
     return GroupByMonth(rows);
   }, [plRows, barPeriod, effectiveYear, availableYears]);
 
-  const predictData = useMemo(() => BuildPredictSeries(plRows, 3), [plRows]);
+  const predictData = useMemo(() => {
+    const source = availableYears.length >= 2
+      ? plRows.filter((r) => r.date.slice(0, 4) === predictEffectiveYear)
+      : plRows;
+    return BuildPredictSeries(source, 3);
+  }, [plRows, availableYears, predictEffectiveYear]);
+
+  const predictXInterval = Math.max(0, Math.floor(predictData.length / 12) - 1);
+  const predictMinWidth  = predictData.length * 65 + 56;
+
+  const barChartRef = useRef<HTMLDivElement>(null);
+  const [predictXPadding, setPredictXPadding] = useState(0);
+
+  useEffect(() => {
+    if (chartTab !== "bar") return;
+    const raf = requestAnimationFrame(() => {
+      const tick = barChartRef.current?.querySelector<Element>(".recharts-cartesian-axis-tick");
+      if (!tick) return;
+      const m = /translate\(([^,)\s]+)/.exec(tick.getAttribute("transform") ?? "");
+      // YAxis(56) + 차트 기본 margin.left(5) = 61px offset 제거
+      if (m) setPredictXPadding(Math.round(parseFloat(m[1])) - 61);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [chartTab, barData]);
 
   const pieData = useMemo(() => {
     const map = new Map<string, number>();
@@ -174,6 +202,7 @@ export default function AnalyticsDashboard({
                       )}
                     </div>
                   </div>
+                  <div ref={barChartRef}>
                   <ResponsiveContainer width="100%" height={260}>
                     <BarChart data={barData} barCategoryGap="30%" barGap={3}>
                       <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
@@ -192,15 +221,25 @@ export default function AnalyticsDashboard({
                       <Bar dataKey="expense" name="판관비"   fill="#FF8C00" radius={0} />
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 </>
               )}
 
               {chartTab === "predict" && (
                 <>
-                  <div className="mb-5 flex items-center justify-between">
-                    <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                      월별 · 3개월 예측 (선형회귀)
-                    </span>
+                  <div className="mb-5 flex items-start justify-between">
+                    <div className="flex flex-col items-start gap-2">
+                      <span className="rounded-full border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                        월별 · 3개월 예측 (선형회귀)
+                      </span>
+                      {availableYears.length >= 2 && (
+                        <TabSwitcher
+                          tabs={availableYears.map((y) => ({ value: y, label: `${y}년` }))}
+                          active={predictEffectiveYear}
+                          onChange={setPredictYear}
+                        />
+                      )}
+                    </div>
                     <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center gap-1.5">
                         <svg width="24" height="10" className="shrink-0"><line x1="0" y1="5" x2="24" y2="5" stroke="currentColor" strokeWidth="2" /></svg>
@@ -216,10 +255,12 @@ export default function AnalyticsDashboard({
                     <EmptyChartMessage className="py-12">예측을 위한 데이터가 부족합니다 (최소 2개월 필요)</EmptyChartMessage>
                   ) : (
                     <>
+                      <div className="overflow-x-auto">
+                      <div style={{ minWidth: predictMinWidth }}>
                       <ResponsiveContainer width="100%" height={280}>
                         <LineChart data={predictData}>
                           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} vertical={false} />
-                          <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} />
+                          <XAxis dataKey="month" tick={axisTick} axisLine={false} tickLine={false} interval={predictXInterval} padding={{ left: predictXPadding, right: predictXPadding }} />
                           <YAxis
                             tickFormatter={(v) => `${(v / 10000).toLocaleString("ko-KR")}만`}
                             tick={{ fontSize: 11, fill: tickColor }}
@@ -236,6 +277,8 @@ export default function AnalyticsDashboard({
                           <Line type="monotone" dataKey="predictExpense" name="판관비 (예측)"   stroke="#FF8C00" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 4, fill: "#FF8C00", strokeWidth: 0 }} activeDot={{ r: 6 }} connectNulls={true} />
                         </LineChart>
                       </ResponsiveContainer>
+                      </div>
+                      </div>
                       <div className="mt-4 flex items-center justify-center gap-6 text-xs text-slate-500 dark:text-slate-400">
                         <span className="flex items-center gap-1.5">
                           <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: "#0066cc" }} />
