@@ -31,10 +31,19 @@ export default function LoginPage() {
 
   async function HandleSocialLogin(provider: "google" | "kakao") {
     setError("");
+
+    // 카카오는 사업자 인증 없이 account_email 권한을 받을 수 없으므로
+    // profile_nickname과 profile_image만 요청함
+    const kakaoOptions =
+      provider === "kakao"
+        ? { scopes: "profile_nickname profile_image" }
+        : {};
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        ...kakaoOptions,
       },
     });
     if (error) {
