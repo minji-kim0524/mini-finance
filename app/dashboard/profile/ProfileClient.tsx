@@ -16,6 +16,21 @@ interface Props {
   hasBoth: boolean;
 }
 
+function PlanFeatureItem({ children, accent, disabled }: { children: React.ReactNode; accent?: boolean; disabled?: boolean }) {
+  return (
+    <li className={`flex items-center gap-1.5 ${disabled ? "opacity-30" : ""}`}>
+      <svg className={`h-3.5 w-3.5 shrink-0 ${accent ? "text-blue-500" : disabled ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        {disabled ? (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        ) : (
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+        )}
+      </svg>
+      {children}
+    </li>
+  );
+}
+
 function CheckDot({ filled }: { filled: boolean }) {
   return filled ? (
     <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -307,18 +322,57 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       </div>
 
       {/* 요금제 */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900 dark:text-gray-100">요금제</span>
-          <CheckDot filled={true} />
+      <div className="space-y-3">
+        <span className="text-base font-bold text-gray-900 dark:text-gray-100">요금제</span>
+        <div className="grid grid-cols-2 gap-3">
+          {/* 무료 플랜 */}
+          <div className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan !== "pro" ? "border-green-500" : "border-gray-200 dark:border-gray-700"}`}>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Free</p>
+              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">₩0</p>
+              {plan !== "pro" && (
+                <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600 dark:bg-green-900/40 dark:text-green-400">현재 플랜</span>
+              )}
+            </div>
+            <ul className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <PlanFeatureItem>리포트 최대 3개</PlanFeatureItem>
+              <PlanFeatureItem>손익계산서 분석</PlanFeatureItem>
+              <PlanFeatureItem>재무상태표 분석</PlanFeatureItem>
+              <PlanFeatureItem>계정 분류 수정</PlanFeatureItem>
+              <PlanFeatureItem disabled>전기/당기 비교</PlanFeatureItem>
+              <PlanFeatureItem disabled>PDF · 엑셀 내보내기</PlanFeatureItem>
+            </ul>
+          </div>
+
+          {/* Pro 플랜 */}
+          <div className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan === "pro" ? "border-blue-500" : "border-gray-200 dark:border-gray-700"}`}>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Pro</p>
+              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">₩9,900</p>
+              {plan === "pro" ? (
+                <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">현재 플랜</span>
+              ) : (
+                <span className="mt-1 inline-block text-xs text-gray-400 dark:text-gray-500">월 구독</span>
+              )}
+            </div>
+            <ul className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+              <PlanFeatureItem accent>리포트 무제한</PlanFeatureItem>
+              <PlanFeatureItem accent>손익계산서 분석</PlanFeatureItem>
+              <PlanFeatureItem accent>재무상태표 분석</PlanFeatureItem>
+              <PlanFeatureItem accent>계정 분류 수정</PlanFeatureItem>
+              <PlanFeatureItem accent>전기/당기 비교</PlanFeatureItem>
+              <PlanFeatureItem accent>PDF · 엑셀 내보내기</PlanFeatureItem>
+            </ul>
+          </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
-          {plan === "pro" ? (
-            <span className="inline-block rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
-          ) : (
-            <span className="inline-block rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-500 dark:bg-gray-800 dark:text-gray-400">무료</span>
-          )}
-        </div>
+        {plan !== "pro" && (
+          <a
+            href="/pricing"
+            className="block w-full rounded-xl bg-blue-600 px-4 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            Pro로 업그레이드
+          </a>
+        )}
       </div>
 
       {/* 세금계산서 (사업자 전용) */}
