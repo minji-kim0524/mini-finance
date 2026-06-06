@@ -286,6 +286,11 @@ export default function SignupPage() {
             로그인
           </Link>
         </p>
+        <p className="mt-3 text-center text-xs text-slate-400 dark:text-slate-500">
+          <Link href="/privacy" target="_blank" className="underline underline-offset-2 hover:text-slate-600 dark:hover:text-slate-300">
+            개인정보처리방침
+          </Link>
+        </p>
       </section>
     </div>
   );
