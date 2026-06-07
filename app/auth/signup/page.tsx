@@ -48,6 +48,9 @@ export default function SignupPage() {
   const [bizVerifyStatus, setBizVerifyStatus] = useState<BizVerifyStatus>("idle");
   const [bizVerifyMessage, setBizVerifyMessage] = useState("");
 
+  const [privacyAgreed, setPrivacyAgreed] = useState(false);
+  const [privacyExpanded, setPrivacyExpanded] = useState(false);
+
   const supabase = CreateClient();
 
   function HandleAccountTypeChange(type: AccountType) {
@@ -109,6 +112,7 @@ export default function SignupPage() {
     }
     if (password.length < 6) { setError("비밀번호는 최소 6자 이상이어야 합니다."); return; }
     if (password !== confirmPassword) { setError("비밀번호가 일치하지 않습니다."); return; }
+    if (!privacyAgreed) { setError("개인정보처리방침에 동의해주세요."); return; }
 
     setLoading(true);
     const { error } = await supabase.auth.signUp({
@@ -267,6 +271,75 @@ export default function SignupPage() {
               className={inputCls}
             />
           </label>
+
+          {/* 개인정보처리방침 동의 */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-700">
+            {/* 헤더: 클릭 시 내용 펼침/접힘 */}
+            <button
+              type="button"
+              onClick={() => setPrivacyExpanded((prev) => !prev)}
+              className="flex w-full items-center justify-between px-4 py-3 text-left"
+            >
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                개인정보처리방침 동의<Required />
+              </span>
+              {/* 펼침 상태에 따라 화살표 방향 변경 */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${privacyExpanded ? "rotate-180" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {/* 펼쳐질 때 개인정보처리방침 주요 내용 표시 */}
+            {privacyExpanded && (
+              <div className="max-h-52 overflow-y-auto border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+                <div className="space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  <div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">수집하는 개인정보</p>
+                    <p>이메일, 비밀번호(암호화 저장), 이름, 생년월일 또는 사업자등록번호</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">수집 및 이용 목적</p>
+                    <p>회원 식별 및 서비스 로그인·인증, 재무 데이터 분석 서비스 제공, 분석 결과 저장 및 이용자별 맞춤 제공, 서비스 관련 고지사항 전달</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">보유 및 이용 기간</p>
+                    <p>서비스 탈퇴 시 즉시 파기 (단, 관련 법령에 따라 최대 5년 보관)</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">제3자 제공</p>
+                    <p>원칙적으로 제3자에게 제공하지 않으며, 이용자 동의 또는 법령에 의한 경우에만 예외적으로 제공</p>
+                  </div>
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="inline-block font-medium text-blue-600 underline underline-offset-2 hover:text-blue-700 dark:text-blue-400"
+                  >
+                    전문 보기 →
+                  </Link>
+                </div>
+              </div>
+            )}
+
+            {/* 동의 체크박스 */}
+            <label className="flex cursor-pointer items-start gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+              <input
+                type="checkbox"
+                checked={privacyAgreed}
+                onChange={(e) => setPrivacyAgreed(e.target.checked)}
+                className="mt-0.5 h-4 w-4 shrink-0 accent-blue-600"
+              />
+              <span className="text-xs text-slate-600 dark:text-slate-400">
+                개인정보 수집·이용에 동의합니다. <span className="text-red-500">(필수)</span>
+              </span>
+            </label>
+          </div>
 
           {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
