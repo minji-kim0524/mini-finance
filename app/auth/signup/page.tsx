@@ -105,7 +105,8 @@ export default function SignupPage() {
   async function HandleSignup() {
     setError("");
     if (!name.trim()) { setError(accountType === "personal" ? "이름을 입력해주세요." : "회사명을 입력해주세요."); return; }
-    if (!identifier.trim()) { setError(accountType === "personal" ? "생년월일을 입력해주세요." : "사업자등록번호를 입력해주세요."); return; }
+    // 사업자 계정은 사업자등록번호가 필수, 개인 계정의 생년월일은 선택
+    if (accountType === "business" && !identifier.trim()) { setError("사업자등록번호를 입력해주세요."); return; }
     if (accountType === "business") {
       if (identifier.replace(/\D/g, "").length !== 10) { setError("사업자등록번호는 10자리여야 합니다. (예: 123-45-67890)"); return; }
       if (!bizVerified) { setError("사업자등록번호 조회를 먼저 완료해주세요."); return; }
