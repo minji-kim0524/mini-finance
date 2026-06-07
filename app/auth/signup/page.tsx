@@ -197,7 +197,7 @@ export default function SignupPage() {
 
           <div className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {accountType === "personal"
-              ? "생년월일"
+              ? <span>생년월일 <span className="font-normal text-slate-400 dark:text-slate-500">(선택)</span></span>
               : <><span>사업자등록번호</span><Required /></>
             }
             {accountType === "personal" ? (
