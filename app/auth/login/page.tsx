@@ -52,10 +52,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
+    <div className="relative min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4 dark:bg-slate-950">
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
+
+      <div className="mb-8 text-center">
+        <p className="text-xs tracking-wide text-slate-400 dark:text-slate-500">
+          최소한의 데이터로 재무상태를 시각화 해주는
+        </p>
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <img src="/finance-favicon.svg" alt="MINI-Finance 로고" className="h-8 w-8 dark:invert" />
+          <span className="text-2xl font-bold tracking-tight text-slate-800 dark:text-slate-100">
+            MINI-Finance
+          </span>
+        </div>
+      </div>
+
       <section className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-lg shadow-slate-200/60 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-900/60">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">로그인</h1>
