@@ -79,12 +79,13 @@ export default function UserMenu({ name, email, plan, hasCustomerId }: UserMenuP
             프로필 설정
           </Link>
           {plan !== "pro" && (
-            <a
+            <Link
               href="/pricing"
+              onClick={() => setOpen(false)}
               className="block w-full px-4 py-2.5 text-left text-sm font-semibold text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20"
             >
               Pro 업그레이드
-            </a>
+            </Link>
           )}
           {plan === "pro" && hasCustomerId && (
             <button
