@@ -48,21 +48,21 @@ function CheckDot({ filled }: { filled: boolean }) {
 
 export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth, avatarUrl: initialAvatarUrl }: Props) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
+  const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarMessage, setAvatarMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nameValue, setNameValue] = useState(name ?? "");
-  const [nameSaving, setNameSaving] = useState(false);
-  const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [activeType, setActiveType] = useState<"personal" | "business">(accountType);
   const [typeError, setTypeError] = useState<string | null>(null);
 
   const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
-  const [birthDateSaving, setBirthDateSaving] = useState(false);
-  const [birthDateMessage, setBirthDateMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
@@ -77,7 +77,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
     if (!file) return;
 
     setAvatarUploading(true);
-    setAvatarMessage(null);
+    setAvatarUploadError(null);
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -92,25 +92,15 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
       if (uploadError) {
         console.error("[avatar upload error]", uploadError);
-        setAvatarMessage({ type: "error", text: "이미지 업로드에 실패했습니다." });
+        setAvatarUploadError("이미지 업로드에 실패했습니다.");
         return;
       }
 
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-
-      const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: publicUrl },
-      });
-
-      if (updateError) {
-        setAvatarMessage({ type: "error", text: "프로필 이미지 저장에 실패했습니다." });
-        return;
-      }
-
       setAvatarUrl(publicUrl);
-      setAvatarMessage({ type: "success", text: "프로필 사진이 변경되었습니다." });
+      setPendingAvatarUrl(publicUrl);
     } catch {
-      setAvatarMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
+      setAvatarUploadError("네트워크 오류가 발생했습니다.");
     } finally {
       setAvatarUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -138,52 +128,41 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
     }
   }
 
-  async function HandleNameSave(e: React.FormEvent) {
-    e.preventDefault();
-    setNameSaving(true);
-    setNameMessage(null);
-    try {
-      const res = await fetch("/api/user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nameValue }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setNameMessage({ type: "error", text: json.error ?? "저장 실패" });
-      } else {
-        setNameMessage({ type: "success", text: "이름이 변경되었습니다." });
-        router.refresh();
-      }
-    } catch {
-      setNameMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
-    } finally {
-      setNameSaving(false);
-    }
+  function HandleConfirmDate(dateStr: string) {
+    setBirthDateValue(dateStr);
+    setShowDatePicker(false);
   }
 
-  async function HandleConfirmDate(dateStr: string) {
-    setBirthDateValue(dateStr);
-    setBirthDateSaving(true);
-    setBirthDateMessage(null);
+  async function HandleSave() {
+    if (!nameValue.trim()) {
+      setSaveMessage({ type: "error", text: "이름을 입력해주세요." });
+      return;
+    }
+
+    setSaving(true);
+    setSaveMessage(null);
+
     try {
-      const res = await fetch("/api/user", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birth_date: dateStr }),
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          name: nameValue.trim(),
+          birth_date: birthDateValue || null,
+          ...(pendingAvatarUrl && { avatar_url: pendingAvatarUrl }),
+        },
       });
-      const json = await res.json();
-      if (!res.ok) {
-        setBirthDateMessage({ type: "error", text: json.error ?? "저장 실패" });
-      } else {
-        setBirthDateMessage({ type: "success", text: "생년월일이 저장되었습니다." });
-        setShowDatePicker(false);
-        router.refresh();
+
+      if (error) {
+        setSaveMessage({ type: "error", text: "저장에 실패했습니다." });
+        return;
       }
+
+      setSaveMessage({ type: "success", text: "저장되었습니다." });
+      setPendingAvatarUrl(null);
+      router.refresh();
     } catch {
-      setBirthDateMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
+      setSaveMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
     } finally {
-      setBirthDateSaving(false);
+      setSaving(false);
     }
   }
 
@@ -251,10 +230,8 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           className="hidden"
           onChange={HandleAvatarChange}
         />
-        {avatarMessage && (
-          <span className={`text-sm font-medium ${avatarMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
-            {avatarMessage.text}
-          </span>
+        {avatarUploadError && (
+          <span className="text-sm font-medium text-red-500">{avatarUploadError}</span>
         )}
       </div>
 
@@ -285,51 +262,27 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
       {/* 이름 */}
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-gray-900 dark:text-gray-100">이름</span>
-            <CheckDot filled={!!nameValue.trim()} />
-          </div>
-          {nameMessage && (
-            <span className={`text-sm font-medium ${nameMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
-              {nameMessage.text}
-            </span>
-          )}
+        <div className="flex items-center gap-2">
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">이름</span>
+          <CheckDot filled={!!nameValue.trim()} />
         </div>
-        <form
-          onSubmit={HandleNameSave}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900"
-        >
+        <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
           <input
             type="text"
             value={nameValue}
-            onChange={(e) => { setNameValue(e.target.value); setNameMessage(null); }}
+            onChange={(e) => setNameValue(e.target.value)}
             placeholder="이름을 입력하세요"
             className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
           />
-          <button
-            type="submit"
-            disabled={nameSaving || nameValue.trim() === (name ?? "")}
-            className="rounded-lg bg-green-500 px-3 py-1 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
-          >
-            {nameSaving ? "저장 중…" : "저장"}
-          </button>
-        </form>
+        </div>
       </div>
 
       {/* 생년월일 (개인) */}
       {activeType === "personal" && (
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-gray-900 dark:text-gray-100">생년월일</span>
-              <CheckDot filled={!!birthDateValue} />
-            </div>
-            {birthDateMessage && (
-              <span className={`text-sm font-medium ${birthDateMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
-                {birthDateMessage.text}
-              </span>
-            )}
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">생년월일</span>
+            <CheckDot filled={!!birthDateValue} />
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
             <span className={`flex-1 text-sm ${birthDateValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}>
@@ -355,7 +308,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
             <BirthDatePicker
               value={birthDateValue}
               onConfirm={HandleConfirmDate}
-              loading={birthDateSaving}
+              loading={false}
             />
           )}
         </div>
@@ -394,6 +347,23 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
             </span>
           )}
         </div>
+      </div>
+
+      {/* 저장 버튼 */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={HandleSave}
+          disabled={saving || avatarUploading}
+          className="w-full rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+        >
+          {saving ? "저장 중…" : "저장"}
+        </button>
+        {saveMessage && (
+          <p className={`text-center text-sm font-medium ${saveMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+            {saveMessage.text}
+          </p>
+        )}
       </div>
 
       {/* 요금제 */}
