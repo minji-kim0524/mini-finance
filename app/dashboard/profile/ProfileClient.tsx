@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
 import BirthDatePicker from "./BirthDatePicker";
@@ -14,6 +14,7 @@ interface Props {
   birthDate: string | null;
   businessNumber: string | null;
   hasBoth: boolean;
+  avatarUrl: string | null;
 }
 
 function PlanFeatureItem({ children, accent, disabled }: { children: React.ReactNode; accent?: boolean; disabled?: boolean }) {
@@ -45,7 +46,12 @@ function CheckDot({ filled }: { filled: boolean }) {
   );
 }
 
-export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth }: Props) {
+export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth, avatarUrl: initialAvatarUrl }: Props) {
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarMessage, setAvatarMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [nameValue, setNameValue] = useState(name ?? "");
   const [nameSaving, setNameSaving] = useState(false);
   const [nameMessage, setNameMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -65,6 +71,50 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
   const router = useRouter();
   const supabase = CreateClient();
+
+  async function HandleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setAvatarUploading(true);
+    setAvatarMessage(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) {
+        setAvatarMessage({ type: "error", text: "이미지 업로드에 실패했습니다." });
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl },
+      });
+
+      if (updateError) {
+        setAvatarMessage({ type: "error", text: "프로필 이미지 저장에 실패했습니다." });
+        return;
+      }
+
+      setAvatarUrl(publicUrl);
+      setAvatarMessage({ type: "success", text: "프로필 사진이 변경되었습니다." });
+    } catch {
+      setAvatarMessage({ type: "error", text: "네트워크 오류가 발생했습니다." });
+    } finally {
+      setAvatarUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   async function HandleTypeSwitch(type: "personal" | "business") {
     if (!hasBoth || type === activeType) return;
@@ -162,25 +212,49 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">프로필 설정</h1>
 
       {/* 프로필 아바타 */}
-      <div className="flex justify-center">
-        <div className="relative">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-              <circle cx="24" cy="18" r="9" fill="#9ca3af" />
-              <path d="M8 44c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#9ca3af" />
-            </svg>
+      <div className="flex flex-col items-center gap-2">
+        <button
+          type="button"
+          aria-label="프로필 사진 변경"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={avatarUploading}
+          className="relative disabled:opacity-60"
+        >
+          <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="프로필 사진" className="h-full w-full object-cover" />
+            ) : (
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+                <circle cx="24" cy="18" r="9" fill="#9ca3af" />
+                <path d="M8 44c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#9ca3af" />
+              </svg>
+            )}
           </div>
-          <button
-            type="button"
-            aria-label="프로필 사진 변경"
-            className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-gray-400 transition hover:bg-gray-500 dark:bg-gray-600"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
-            </svg>
-          </button>
-        </div>
+          <div className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-gray-400 transition hover:bg-gray-500 dark:bg-gray-600">
+            {avatarUploading ? (
+              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2.5" strokeDasharray="32" strokeDashoffset="10" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
+              </svg>
+            )}
+          </div>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={HandleAvatarChange}
+        />
+        {avatarMessage && (
+          <span className={`text-sm font-medium ${avatarMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+            {avatarMessage.text}
+          </span>
+        )}
       </div>
 
       {/* 계정 유형 */}

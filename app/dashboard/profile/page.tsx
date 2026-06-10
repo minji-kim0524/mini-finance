@@ -26,6 +26,7 @@ export default async function ProfilePage() {
       birthDate={metadata.birth_date ?? null}
       businessNumber={metadata.business_number ?? null}
       hasBoth={hasBoth}
+      avatarUrl={metadata.avatar_url ?? null}
     />
   );
 }
