@@ -10,9 +10,10 @@ interface UserMenuProps {
   email: string;
   plan?: string;
   hasCustomerId?: boolean;
+  avatarUrl?: string | null;
 }
 
-export default function UserMenu({ name, email, plan, hasCustomerId }: UserMenuProps) {
+export default function UserMenu({ name, email, plan, hasCustomerId, avatarUrl }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -52,10 +53,14 @@ export default function UserMenu({ name, email, plan, hasCustomerId }: UserMenuP
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700 transition hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
+        className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-blue-100 text-sm font-semibold text-blue-700 transition hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
         aria-label="사용자 메뉴"
       >
-        {initials}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt="프로필" className="h-full w-full object-cover" />
+        ) : (
+          initials
+        )}
       </button>
 
       {open && (
