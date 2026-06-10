@@ -91,6 +91,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         .upload(path, file, { upsert: true });
 
       if (uploadError) {
+        console.error("[avatar upload error]", uploadError);
         setAvatarMessage({ type: "error", text: "이미지 업로드에 실패했습니다." });
         return;
       }
