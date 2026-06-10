@@ -63,6 +63,12 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const isDirty =
+    nameValue !== (name ?? "") ||
+    birthDateValue !== (birthDate ?? "") ||
+    pendingAvatarUrl !== null;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
@@ -131,6 +137,14 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   function HandleConfirmDate(dateStr: string) {
     setBirthDateValue(dateStr);
     setShowDatePicker(false);
+  }
+
+  function HandleCancel() {
+    if (isDirty) {
+      setShowCancelModal(true);
+    } else {
+      router.back();
+    }
   }
 
   async function HandleSave() {
@@ -349,22 +363,53 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         </div>
       </div>
 
-      {/* 저장 버튼 */}
+      {/* 저장 / 취소 버튼 */}
       <div className="space-y-2">
-        <button
-          type="button"
-          onClick={HandleSave}
-          disabled={saving || avatarUploading}
-          className="w-full rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
-        >
-          {saving ? "저장 중…" : "저장"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={HandleCancel}
+            disabled={saving}
+            className="flex-1 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={HandleSave}
+            disabled={saving || avatarUploading}
+            className="flex-1 rounded-xl bg-green-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-green-600 disabled:opacity-50"
+          >
+            {saving ? "저장 중…" : "저장"}
+          </button>
+        </div>
         {saveMessage && (
           <p className={`text-center text-sm font-medium ${saveMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
             {saveMessage.text}
           </p>
         )}
       </div>
+
+      {/* 취소 확인 모달 */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-80 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">변경사항 취소</p>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              변경된 내용은 저장되지 않습니다. 계속 하시겠습니까?
+            </p>
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => { setShowCancelModal(false); router.back(); }}
+                className="rounded-xl bg-gray-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 요금제 */}
       <div className="space-y-3">
