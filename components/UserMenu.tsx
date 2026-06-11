@@ -53,7 +53,7 @@ export default function UserMenu({ name, email, plan, hasCustomerId, avatarUrl }
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-blue-100 text-sm font-semibold text-blue-700 transition hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60"
+        className="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-blue-100 text-sm font-semibold text-blue-700 transition hover:bg-blue-200 hover:ring-2 hover:ring-blue-400 hover:ring-offset-1 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/60 dark:hover:ring-blue-500"
         aria-label="사용자 메뉴"
       >
         {avatarUrl ? (
