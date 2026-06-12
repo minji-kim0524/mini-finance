@@ -1,7 +1,34 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { SERVER_INSTANCE_ID } from "@/lib/serverInstance";
+
+const INSTANCE_COOKIE = "server_instance";
 
 export async function UpdateSession(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isAuthRoute = pathname.startsWith("/auth/");
+  const isApiRoute = pathname.startsWith("/api/");
+
+  // 서버 재시작 감지: 쿠키의 인스턴스 ID가 현재 서버와 다르면 세션 무효화
+  if (!isAuthRoute && !isApiRoute) {
+    const instanceCookie = request.cookies.get(INSTANCE_COOKIE)?.value;
+    if (instanceCookie !== SERVER_INSTANCE_ID) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/login";
+      const response = NextResponse.redirect(url);
+      // Supabase 세션 쿠키 삭제
+      request.cookies.getAll().forEach(({ name }) => {
+        if (name.startsWith("sb-")) response.cookies.delete(name);
+      });
+      response.cookies.set(INSTANCE_COOKIE, SERVER_INSTANCE_ID, {
+        httpOnly: true,
+        path: "/",
+        maxAge: 60 * 60 * 24 * 7,
+      });
+      return response;
+    }
+  }
+
   const supabaseResponse = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,10 +51,18 @@ export async function UpdateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // 비로그인 → 로그인 페이지로 리다이렉트
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (!user && pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
   }
+
+  // 인스턴스 쿠키 갱신 (로그인 후 auth 라우트에서도 설정되도록)
+  supabaseResponse.cookies.set(INSTANCE_COOKIE, SERVER_INSTANCE_ID, {
+    httpOnly: true,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
+
   return supabaseResponse;
 }
