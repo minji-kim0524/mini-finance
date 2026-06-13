@@ -1,6 +1,7 @@
 import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AnalyticsDashboard from "./AnalyticsDashboard";
+import { UpgradeBanner } from "@/app/utils/ReportCards";
 import type { FinanceRow } from "@/types/finance";
 
 export default async function DashboardPage() {
@@ -34,6 +35,8 @@ export default async function DashboardPage() {
         .order("date", { ascending: true })
     : { data: [] };
 
+  const atLimit = plan === "free" && (reports?.length ?? 0) >= 3;
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex items-center gap-3">
@@ -48,6 +51,7 @@ export default async function DashboardPage() {
           </span>
         )}
       </div>
+      {atLimit && <UpgradeBanner />}
       <AnalyticsDashboard
         reports={reports ?? []}
         initialRows={(rows ?? []) as FinanceRow[]}
