@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -13,6 +13,12 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = CreateClient();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const callbackError = params.get("error");
+    if (callbackError) setError(`소셜 로그인 실패: ${callbackError}`);
+  }, []);
 
   async function HandleLogin() {
     setError("");
