@@ -16,6 +16,11 @@ export default async function ProfilePage() {
   const metadata = user.user_metadata ?? {};
   const hasBoth = "birth_date" in metadata && "business_number" in metadata;
 
+  const rawAvatarUrl: string = metadata.avatar_url ?? "";
+  const avatarUrl = rawAvatarUrl
+    .replace(/^http:\/\//i, "https://")
+    .replace("fname=http://", "fname=https://") || null;
+
   return (
     <ProfileClient
       name={metadata.name ?? null}
@@ -26,7 +31,7 @@ export default async function ProfilePage() {
       birthDate={metadata.birth_date ?? null}
       businessNumber={metadata.business_number ?? null}
       hasBoth={hasBoth}
-      avatarUrl={metadata.avatar_url ?? null}
+      avatarUrl={avatarUrl}
     />
   );
 }
