@@ -14,6 +14,7 @@ export default async function ProfilePage() {
     .single();
 
   const metadata = user.user_metadata ?? {};
+  const hasBoth = "birth_date" in metadata && "business_number" in metadata;
 
   const rawAvatarUrl: string = metadata.avatar_url ?? "";
   const avatarUrl = rawAvatarUrl
@@ -29,6 +30,7 @@ export default async function ProfilePage() {
       accountType={metadata.account_type ?? "personal"}
       birthDate={metadata.birth_date ?? null}
       businessNumber={metadata.business_number ?? null}
+      hasBoth={hasBoth}
       avatarUrl={avatarUrl}
     />
   );

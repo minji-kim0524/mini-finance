@@ -20,6 +20,18 @@ export async function GET(request: Request) {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
+      // 이메일 계정이 있는데 소셜 로그인으로 접근한 경우 안내 메세지 표시
+      const emailIdentity = user.identities?.find((id) => id.provider === "email");
+      const socialIdentity = user.identities?.find(
+        (id) => id.provider === "kakao" || id.provider === "google"
+      );
+
+      if (emailIdentity && socialIdentity) {
+        return NextResponse.redirect(
+          `${origin}/auth/login?error=${encodeURIComponent("이미 가입된 계정이 있습니다.")}&signout=1`
+        );
+      }
+
       const name =
         user.user_metadata?.name ??       // 카카오: profile_nickname
         user.user_metadata?.full_name ??  // 구글: full_name

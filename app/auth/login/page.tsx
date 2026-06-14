@@ -17,7 +17,13 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const callbackError = params.get("error");
-    if (callbackError) setError(`소셜 로그인 실패: ${callbackError}`);
+    const shouldSignOut = params.get("signout") === "1";
+    if (callbackError) {
+      setError(shouldSignOut ? callbackError : `소셜 로그인 실패: ${callbackError}`);
+    }
+    if (shouldSignOut) {
+      supabase.auth.signOut();
+    }
   }, []);
 
   async function HandleLogin() {

@@ -13,6 +13,7 @@ interface Props {
   accountType: "personal" | "business";
   birthDate: string | null;
   businessNumber: string | null;
+  hasBoth: boolean;
   avatarUrl: string | null;
 }
 
@@ -45,7 +46,7 @@ function CheckDot({ filled }: { filled: boolean }) {
   );
 }
 
-export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, avatarUrl: initialAvatarUrl }: Props) {
+export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth, avatarUrl: initialAvatarUrl }: Props) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -55,7 +56,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   const [nameValue, setNameValue] = useState(name ?? "");
 
   const [activeType, setActiveType] = useState<"personal" | "business">(accountType);
-  const [businessNumberValue, setBusinessNumberValue] = useState(businessNumber ?? "");
+  const [typeError, setTypeError] = useState<string | null>(null);
 
   const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -67,8 +68,6 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
   const isDirty =
     nameValue !== (name ?? "") ||
     birthDateValue !== (birthDate ?? "") ||
-    activeType !== accountType ||
-    businessNumberValue !== (businessNumber ?? "") ||
     pendingAvatarUrl !== null;
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -114,10 +113,25 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
     }
   }
 
-  function HandleTypeSwitch(type: "personal" | "business") {
-    if (type === activeType) return;
+  async function HandleTypeSwitch(type: "personal" | "business") {
+    if (!hasBoth || type === activeType) return;
+    const prev = activeType;
     setActiveType(type);
-    setSaveMessage(null);
+    setTypeError(null);
+    try {
+      const res = await fetch("/api/user", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account_type: type }),
+      });
+      if (!res.ok) {
+        setActiveType(prev);
+        setTypeError("계정 유형 변경에 실패했습니다.");
+      }
+    } catch {
+      setActiveType(prev);
+      setTypeError("네트워크 오류가 발생했습니다.");
+    }
   }
 
   function HandleConfirmDate(dateStr: string) {
@@ -138,10 +152,6 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       setSaveMessage({ type: "error", text: "이름을 입력해주세요." });
       return;
     }
-    if (activeType === "business" && !businessNumberValue.trim()) {
-      setSaveMessage({ type: "error", text: "사업자등록번호를 입력해주세요." });
-      return;
-    }
 
     setSaving(true);
     setSaveMessage(null);
@@ -150,9 +160,7 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       const { error } = await supabase.auth.updateUser({
         data: {
           name: nameValue.trim(),
-          account_type: activeType,
-          birth_date: activeType === "personal" ? (birthDateValue || null) : null,
-          business_number: activeType === "business" ? businessNumberValue.trim() : null,
+          birth_date: birthDateValue || null,
           ...(pendingAvatarUrl && { avatar_url: pendingAvatarUrl }),
         },
       });
@@ -250,16 +258,20 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
               key={type}
               type="button"
               onClick={() => HandleTypeSwitch(type)}
+              disabled={!hasBoth}
               className={`flex-1 py-3 text-sm font-semibold transition ${
                 activeType === type
                   ? "rounded-xl border border-green-500 bg-white text-green-500 dark:bg-gray-900"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  : hasBoth
+                    ? "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    : "cursor-not-allowed text-gray-300 dark:text-gray-600"
               }`}
             >
               {type === "personal" ? "개인" : "사업자"}
             </button>
           ))}
         </div>
+        {typeError && <p className="text-sm text-red-500">{typeError}</p>}
       </div>
 
       {/* 이름 */}
@@ -321,16 +333,12 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="text-base font-bold text-gray-900 dark:text-gray-100">사업자등록번호</span>
-            <CheckDot filled={!!businessNumberValue} />
+            <CheckDot filled={!!businessNumber} />
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
-            <input
-              type="text"
-              value={businessNumberValue}
-              onChange={(e) => setBusinessNumberValue(e.target.value)}
-              placeholder="000-00-00000"
-              className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
-            />
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
+            <span className={`text-sm ${businessNumber ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"}`}>
+              {businessNumber ?? "(입력값없음)"}
+            </span>
           </div>
         </div>
       )}
