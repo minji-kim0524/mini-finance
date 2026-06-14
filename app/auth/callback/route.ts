@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { CreateClient } from "@/lib/supabase/server";
+import { GetSupabaseAdmin } from "@/lib/supabase/admin";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,28 +12,31 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // 소셜 로그인(카카오, 구글) 유저 → profiles 테이블에 저장
-      // 이미 존재하는 유저(id 충돌)는 무시하고, 신규 유저만 insert
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
         const name =
-          user.user_metadata?.name ??         // 카카오: profile_nickname
-          user.user_metadata?.full_name ??    // 구글: full_name
-          user.email?.split("@")[0] ??        // 이메일 앞부분 fallback
+          user.user_metadata?.name ??       // 카카오: profile_nickname
+          user.user_metadata?.full_name ??  // 구글: full_name
+          user.email?.split("@")[0] ??
           "소셜 유저";
 
-        // 이미 profiles가 존재하는 경우(중복 insert)는 에러를 무시
-        await supabase.from("profiles").upsert(
+        // admin 클라이언트로 RLS 우회하여 저장 (신규 유저만, 기존 유저는 무시)
+        const admin = GetSupabaseAdmin();
+        const { error: profileError } = await admin.from("profiles").upsert(
           {
             id: user.id,
             name,
-            account_type: "personal",   // 소셜 로그인은 개인 계정으로 기본 설정
+            account_type: "personal",
             birth_date: null,
             business_number: null,
           },
           { onConflict: "id", ignoreDuplicates: true }
         );
+
+        if (profileError) {
+          console.error("[auth/callback] profiles 저장 실패:", profileError.message);
+        }
       }
 
       return NextResponse.redirect(`${origin}${next}`);
