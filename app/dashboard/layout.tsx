@@ -42,7 +42,7 @@ export default async function DashboardLayout({
             email={user.email ?? ""}
             plan={plan}
             hasCustomerId={!!customerId}
-            avatarUrl={user.user_metadata?.avatar_url ?? null}
+            avatarUrl={(user.user_metadata?.avatar_url ?? "").replace(/^http:\/\//i, "https://").replace("fname=http://", "fname=https://") || null}
           />
         </header>
         <main className="flex-1 overflow-auto px-6 py-8">{children}</main>

@@ -47,12 +47,15 @@ export async function UpdateSession(request: NextRequest) {
       },
     },
   );
+  // getSession(): 쿠키만 읽는 낙관적 체크 (네트워크 요청 없음)
+  // Next.js Proxy 공식 권장 방식 — getUser()는 Supabase API 호출로 느리고
+  // Vercel 서버리스 환경에서 응답 지연 시 null을 리턴해 강제 로그아웃 발생
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   // 비로그인 → 로그인 페이지로 리다이렉트
-  if (!user && pathname.startsWith("/dashboard")) {
+  if (!session && pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
     return NextResponse.redirect(url);
