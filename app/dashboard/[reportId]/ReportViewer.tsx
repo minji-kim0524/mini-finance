@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useRef, useCallback } from "react";
 import { useReactToPrint } from "react-to-print";
-import * as XLSX from "xlsx";
 import { useParams } from "next/navigation";
 import type { FinanceRow, AccountType, PLSummary } from "@/types/finance";
 import { CalcPLSummary } from "@/lib/aggregator";
@@ -633,14 +632,16 @@ function ClassifyView({
 // ─── Excel 내보내기 ──────────────────────────────────────────────
 
 type Row = (string | number | null)[];
+type XLSXModule = typeof import("xlsx");
 
-function MakeSheet(data: Row[], colWidths: number[]): XLSX.WorkSheet {
+function MakeSheet(XLSX: XLSXModule, data: Row[], colWidths: number[]) {
   const ws = XLSX.utils.aoa_to_sheet(data);
   ws['!cols'] = colWidths.map(wch => ({ wch }));
   return ws;
 }
 
-function ExportIncomeStatement(rows: FinanceRow[], filename: string) {
+async function ExportIncomeStatement(rows: FinanceRow[], filename: string) {
+  const XLSX = await import("xlsx");
   const revenue  = GroupByAccount(rows.filter(r => r.type === "revenue"));
   const cogs     = GroupByAccount(rows.filter(r => r.type === "cogs"));
   const expenses = GroupByAccount(rows.filter(r => r.type === "expense"));
@@ -683,11 +684,12 @@ function ExportIncomeStatement(rows: FinanceRow[], filename: string) {
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, MakeSheet(data, [32, 18, 18]), '손익계산서');
+  XLSX.utils.book_append_sheet(wb, MakeSheet(XLSX, data, [32, 18, 18]), '손익계산서');
   XLSX.writeFile(wb, `${filename}_손익계산서.xlsx`);
 }
 
-function ExportBalanceSheet(rows: FinanceRow[], filename: string) {
+async function ExportBalanceSheet(rows: FinanceRow[], filename: string) {
+  const XLSX = await import("xlsx");
   const assets      = rows.filter(r => r.type === "asset");
   const liabilities = rows.filter(r => r.type === "liability");
   const equity      = rows.filter(r => r.type === "equity");
@@ -738,7 +740,7 @@ function ExportBalanceSheet(rows: FinanceRow[], filename: string) {
   ];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, MakeSheet(data, [32, 18, 18]), '재무상태표');
+  XLSX.utils.book_append_sheet(wb, MakeSheet(XLSX, data, [32, 18, 18]), '재무상태표');
   XLSX.writeFile(wb, `${filename}_재무상태표.xlsx`);
 }
 
@@ -825,10 +827,10 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
     return rows.filter(r => { if (r.type === "other" && !seen.has(r.account)) { seen.add(r.account); return true; } return false; }).length;
   }, [rows]);
 
-  function HandleExcelExport() {
+  async function HandleExcelExport() {
     const name = reportName.replace(/\.(xlsx|xls)$/i, "");
-    if (tab === "income")  ExportIncomeStatement(rows, name);
-    if (tab === "balance") ExportBalanceSheet(rows, name);
+    if (tab === "income")  await ExportIncomeStatement(rows, name);
+    if (tab === "balance") await ExportBalanceSheet(rows, name);
   }
 
   return (

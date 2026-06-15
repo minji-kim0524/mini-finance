@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import * as XLSX from "xlsx";
 import type { PLSummary } from "@/types/finance";
 import { FormatKRW } from "@/lib/format";
 
@@ -138,7 +137,8 @@ export default function UploadClient() {
   );
 }
 
-function DownloadSample() {
+async function DownloadSample() {
+  const XLSX = await import("xlsx");
   const data = [
     ["날짜", "계정과목", "금액"],
     ["2024-01-05", "상품매출", 8000000],
