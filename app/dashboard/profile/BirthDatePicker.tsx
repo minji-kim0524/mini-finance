@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 
 // ── Wheel column ──────────────────────────────────────────────────────────
 
@@ -21,7 +21,9 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
   const cbRef = useRef(onChange);
   const [live, setLive] = useState(selectedIndex);
 
-  cbRef.current = onChange;
+  useLayoutEffect(() => {
+    cbRef.current = onChange;
+  });
 
   useEffect(() => {
     if (!scrolling.current) {
@@ -142,13 +144,11 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
   const [wYIdx, setWYIdx] = useState(Math.max(0, years.indexOf(`${viewY}년`)));
   const [wMIdx, setWMIdx] = useState(viewM - 1);
 
-  // Sync wheel indices when opening wheel mode
-  useEffect(() => {
-    if (mode === "wheel") {
-      setWYIdx(Math.max(0, years.indexOf(`${viewY}년`)));
-      setWMIdx(viewM - 1);
-    }
-  }, [mode]); // eslint-disable-line react-hooks/exhaustive-deps
+  function OpenWheel() {
+    setWYIdx(Math.max(0, years.indexOf(`${viewY}년`)));
+    setWMIdx(viewM - 1);
+    setMode("wheel");
+  }
 
   function PrevMonth() {
     if (viewM === 1) { setViewY(y => y - 1); setViewM(12); }
@@ -237,14 +237,14 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
         <div className="flex gap-0.5">
           <button
             type="button"
-            onClick={() => setMode("wheel")}
+            onClick={OpenWheel}
             className="rounded-lg px-2 py-1 text-sm font-bold text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
           >
             {viewY}년
           </button>
           <button
             type="button"
-            onClick={() => setMode("wheel")}
+            onClick={OpenWheel}
             className="rounded-lg px-2 py-1 text-sm font-bold text-gray-900 transition hover:bg-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
           >
             {viewM}월
