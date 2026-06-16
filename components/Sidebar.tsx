@@ -29,16 +29,6 @@ export default function Sidebar({ plan }: { plan: string }) {
 
   return (
     <aside className="flex w-56 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-      {/* 로고 */}
-      <div className="flex h-14 items-center border-b border-slate-200 px-5 dark:border-slate-800">
-        <Link
-          href="/dashboard"
-          className="text-base font-bold text-slate-900 dark:text-slate-100"
-        >
-          MINI-Finance
-        </Link>
-      </div>
-
       {/* 네비게이션 */}
       <nav className="flex-1 space-y-0.5 p-3 pt-4">
         {navItems.map(({ href, label, exact, icon: Icon }) => {
