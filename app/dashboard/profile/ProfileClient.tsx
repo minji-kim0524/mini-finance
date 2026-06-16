@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
 import BirthDatePicker from "./BirthDatePicker";
@@ -17,14 +18,36 @@ interface Props {
   avatarUrl: string | null;
 }
 
-function PlanFeatureItem({ children, accent, disabled }: { children: React.ReactNode; accent?: boolean; disabled?: boolean }) {
+function PlanFeatureItem({
+  children,
+  accent,
+  disabled,
+}: {
+  children: React.ReactNode;
+  accent?: boolean;
+  disabled?: boolean;
+}) {
   return (
     <li className={`flex items-center gap-1.5 ${disabled ? "opacity-30" : ""}`}>
-      <svg className={`h-3.5 w-3.5 shrink-0 ${accent ? "text-blue-500" : disabled ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg
+        className={`h-3.5 w-3.5 shrink-0 ${accent ? "text-blue-500" : disabled ? "text-gray-300 dark:text-gray-600" : "text-gray-400"}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2.5}
+      >
         {disabled ? (
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M6 18L18 6M6 6l12 12"
+          />
         ) : (
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M4.5 12.75l6 6 9-13.5"
+          />
         )}
       </svg>
       {children}
@@ -34,35 +57,76 @@ function PlanFeatureItem({ children, accent, disabled }: { children: React.React
 
 function CheckDot({ filled }: { filled: boolean }) {
   return filled ? (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <circle cx="10" cy="10" r="10" fill="#22c55e" />
-      <path d="M6 10l2.5 2.5 5.5-5" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M6 10l2.5 2.5 5.5-5"
+        stroke="white"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   ) : (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      aria-hidden="true"
+    >
       <circle cx="10" cy="10" r="9" stroke="#d1d5db" strokeWidth="1.5" />
-      <path d="M6 10l2.5 2.5 5.5-5" stroke="#d1d5db" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M6 10l2.5 2.5 5.5-5"
+        stroke="#d1d5db"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-export default function ProfileClient({ name, email, emailVerified, plan, accountType, birthDate, businessNumber, hasBoth, avatarUrl: initialAvatarUrl }: Props) {
+export default function ProfileClient({
+  name,
+  email,
+  emailVerified,
+  plan,
+  accountType,
+  birthDate,
+  businessNumber,
+  hasBoth,
+  avatarUrl: initialAvatarUrl,
+}: Props) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialAvatarUrl);
   const [pendingAvatarUrl, setPendingAvatarUrl] = useState<string | null>(null);
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [nameValue, setNameValue] = useState(name ?? "");
 
-  const [activeType, setActiveType] = useState<"personal" | "business">(accountType);
+  const [activeType, setActiveType] = useState<"personal" | "business">(
+    accountType,
+  );
   const [typeError, setTypeError] = useState<string | null>(null);
 
   const [birthDateValue, setBirthDateValue] = useState(birthDate ?? "");
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [saving, setSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [saveMessage, setSaveMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   const isDirty =
@@ -86,7 +150,9 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
     setAvatarUploadError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const ext = file.name.split(".").pop();
@@ -102,7 +168,9 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         return;
       }
 
-      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("avatars").getPublicUrl(path);
       setAvatarUrl(publicUrl);
       setPendingAvatarUrl(publicUrl);
     } catch {
@@ -203,7 +271,9 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
   return (
     <div className="mx-auto max-w-lg space-y-8 px-2 py-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">프로필 설정</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        프로필 설정
+      </h1>
 
       {/* 프로필 아바타 */}
       <div className="flex flex-col items-center gap-2">
@@ -216,22 +286,62 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
         >
           <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
             {avatarUrl ? (
-              <img src={avatarUrl} alt="프로필 사진" className="h-full w-full object-cover" />
+              <Image
+                src={avatarUrl}
+                alt="프로필 사진"
+                className="h-full w-full object-cover"
+              />
             ) : (
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+              <svg
+                width="48"
+                height="48"
+                viewBox="0 0 48 48"
+                fill="none"
+                aria-hidden="true"
+              >
                 <circle cx="24" cy="18" r="9" fill="#9ca3af" />
-                <path d="M8 44c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#9ca3af" />
+                <path
+                  d="M8 44c0-8.837 7.163-16 16-16s16 7.163 16 16"
+                  fill="#9ca3af"
+                />
               </svg>
             )}
           </div>
           <div className="absolute bottom-0 right-0 flex h-7 w-7 items-center justify-center rounded-full bg-gray-400 transition hover:bg-gray-500 dark:bg-gray-600">
             {avatarUploading ? (
-              <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="2.5" strokeDasharray="32" strokeDashoffset="10" />
+              <svg
+                className="animate-spin"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="2.5"
+                  strokeDasharray="32"
+                  strokeDashoffset="10"
+                />
               </svg>
             ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 <circle cx="12" cy="13" r="4" stroke="white" strokeWidth="2" />
               </svg>
             )}
@@ -245,13 +355,17 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           onChange={HandleAvatarChange}
         />
         {avatarUploadError && (
-          <span className="text-sm font-medium text-red-500">{avatarUploadError}</span>
+          <span className="text-sm font-medium text-red-500">
+            {avatarUploadError}
+          </span>
         )}
       </div>
 
       {/* 계정 유형 */}
       <div className="space-y-2">
-        <span className="text-base font-bold text-gray-900 dark:text-gray-100">계정 유형</span>
+        <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+          계정 유형
+        </span>
         <div className="flex overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
           {(["personal", "business"] as const).map((type) => (
             <button
@@ -277,7 +391,9 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {/* 이름 */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900 dark:text-gray-100">이름</span>
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+            이름
+          </span>
           <CheckDot filled={!!nameValue.trim()} />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
@@ -295,11 +411,15 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {activeType === "personal" && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-gray-900 dark:text-gray-100">생년월일</span>
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+              생년월일
+            </span>
             <CheckDot filled={!!birthDateValue} />
           </div>
           <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
-            <span className={`flex-1 text-sm ${birthDateValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}>
+            <span
+              className={`flex-1 text-sm ${birthDateValue ? "text-gray-900 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}`}
+            >
               {birthDateValue
                 ? birthDateValue.replace(/-/g, ".")
                 : "생년월일을 입력해주세요"}
@@ -310,7 +430,17 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
               aria-label="날짜 선택"
               className="text-gray-400 transition hover:text-gray-600 dark:hover:text-gray-300"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -332,11 +462,15 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {activeType === "business" && (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-gray-900 dark:text-gray-100">사업자등록번호</span>
+            <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+              사업자등록번호
+            </span>
             <CheckDot filled={!!businessNumber} />
           </div>
           <div className="rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
-            <span className={`text-sm ${businessNumber ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"}`}>
+            <span
+              className={`text-sm ${businessNumber ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500"}`}
+            >
               {businessNumber ?? "(입력값없음)"}
             </span>
           </div>
@@ -346,16 +480,31 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {/* 이메일 */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900 dark:text-gray-100">이메일</span>
+          <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+            이메일
+          </span>
           <CheckDot filled={!!email} />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 dark:border-gray-700 dark:bg-gray-900">
-          <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">{email}</span>
+          <span className="flex-1 text-sm text-gray-700 dark:text-gray-300">
+            {email}
+          </span>
           {emailVerified && (
             <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700 dark:bg-green-900/40 dark:text-green-400">
-              <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <svg
+                className="h-3 w-3"
+                viewBox="0 0 12 12"
+                fill="none"
+                aria-hidden="true"
+              >
                 <circle cx="6" cy="6" r="6" fill="#22c55e" />
-                <path d="M3.5 6l1.8 1.8 3.2-3.6" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M3.5 6l1.8 1.8 3.2-3.6"
+                  stroke="white"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               인증완료
             </span>
@@ -384,7 +533,9 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           </button>
         </div>
         {saveMessage && (
-          <p className={`text-center text-sm font-medium ${saveMessage.type === "success" ? "text-green-500" : "text-red-500"}`}>
+          <p
+            className={`text-center text-sm font-medium ${saveMessage.type === "success" ? "text-green-500" : "text-red-500"}`}
+          >
             {saveMessage.text}
           </p>
         )}
@@ -394,14 +545,19 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="w-80 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">변경사항 취소</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+              변경사항 취소
+            </p>
             <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
               변경된 내용은 저장되지 않습니다. 계속 하시겠습니까?
             </p>
             <div className="mt-5 flex justify-end">
               <button
                 type="button"
-                onClick={() => { setShowCancelModal(false); router.back(); }}
+                onClick={() => {
+                  setShowCancelModal(false);
+                  router.back();
+                }}
                 className="rounded-xl bg-gray-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
               >
                 확인
@@ -413,15 +569,25 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
 
       {/* 요금제 */}
       <div className="space-y-3">
-        <span className="text-base font-bold text-gray-900 dark:text-gray-100">요금제</span>
+        <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+          요금제
+        </span>
         <div className="grid grid-cols-2 gap-3">
           {/* 무료 플랜 */}
-          <div className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan !== "pro" ? "border-green-500" : "border-gray-200 dark:border-gray-700"}`}>
+          <div
+            className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan !== "pro" ? "border-green-500" : "border-gray-200 dark:border-gray-700"}`}
+          >
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">Free</p>
-              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">₩0</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                Free
+              </p>
+              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">
+                ₩0
+              </p>
               {plan !== "pro" && (
-                <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600 dark:bg-green-900/40 dark:text-green-400">현재 플랜</span>
+                <span className="mt-1 inline-block rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600 dark:bg-green-900/40 dark:text-green-400">
+                  현재 플랜
+                </span>
               )}
             </div>
             <ul className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -435,14 +601,24 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           </div>
 
           {/* Pro 플랜 */}
-          <div className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan === "pro" ? "border-blue-500" : "border-gray-200 dark:border-gray-700"}`}>
+          <div
+            className={`rounded-2xl border-2 bg-white p-4 space-y-3 dark:bg-gray-900 ${plan === "pro" ? "border-blue-500" : "border-gray-200 dark:border-gray-700"}`}
+          >
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">Pro</p>
-              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">₩9,900</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
+                Pro
+              </p>
+              <p className="mt-1 text-xl font-bold text-gray-900 dark:text-gray-100">
+                ₩9,900
+              </p>
               {plan === "pro" ? (
-                <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">현재 플랜</span>
+                <span className="mt-1 inline-block rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                  현재 플랜
+                </span>
               ) : (
-                <span className="mt-1 inline-block text-xs text-gray-400 dark:text-gray-500">월 구독</span>
+                <span className="mt-1 inline-block text-xs text-gray-400 dark:text-gray-500">
+                  월 구독
+                </span>
               )}
             </div>
             <ul className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
@@ -468,9 +644,12 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
       {/* 세금계산서 (사업자 전용) */}
       {activeType === "business" && (
         <section className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">세금계산서</h2>
+          <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            세금계산서
+          </h2>
           <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-            유료 요금제 이용 시 해당 월 결제 금액에 대한 세금계산서를 발행할 수 있습니다.
+            유료 요금제 이용 시 해당 월 결제 금액에 대한 세금계산서를 발행할 수
+            있습니다.
           </p>
           <button
             type="button"
@@ -480,16 +659,21 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
             세금계산서 발행
           </button>
           {plan === "free" && (
-            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">유료 요금제 이용 시 활성화됩니다.</p>
+            <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+              유료 요금제 이용 시 활성화됩니다.
+            </p>
           )}
         </section>
       )}
 
       {/* 회원탈퇴 */}
       <section className="rounded-2xl border border-red-200 bg-white p-6 dark:border-red-900/50 dark:bg-gray-900">
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-red-500">위험 구역</h2>
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-red-500">
+          위험 구역
+        </h2>
         <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-          계정을 삭제하면 모든 데이터(업로드 내역, 분석 결과)가 영구적으로 삭제되며 복구할 수 없습니다.
+          계정을 삭제하면 모든 데이터(업로드 내역, 분석 결과)가 영구적으로
+          삭제되며 복구할 수 없습니다.
         </p>
         {!showDeleteConfirm ? (
           <button
@@ -503,8 +687,8 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
           <div className="space-y-3">
             <p className="text-sm text-gray-700 dark:text-gray-300">
               계속하려면 아래 입력란에{" "}
-              <strong className="text-red-500">{deleteConfirmPhrase}</strong>
-              을 입력하세요.
+              <strong className="text-red-500">{deleteConfirmPhrase}</strong>을
+              입력하세요.
             </p>
             <input
               type="text"
@@ -513,11 +697,17 @@ export default function ProfileClient({ name, email, emailVerified, plan, accoun
               placeholder={deleteConfirmPhrase}
               className="w-full rounded-xl border border-red-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-red-400 focus:ring-2 focus:ring-red-400/20 dark:border-red-900/50 dark:bg-gray-800 dark:text-gray-100"
             />
-            {deleteError && <p className="text-sm text-red-500">{deleteError}</p>}
+            {deleteError && (
+              <p className="text-sm text-red-500">{deleteError}</p>
+            )}
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => { setShowDeleteConfirm(false); setDeleteInput(""); setDeleteError(null); }}
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteInput("");
+                  setDeleteError(null);
+                }}
                 className="rounded-xl border border-gray-200 px-5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 취소
