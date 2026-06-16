@@ -27,7 +27,10 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
 
   useEffect(() => {
     if (!scrolling.current) {
-      ref.current?.scrollTo({ top: selectedIndex * ITEM_H, behavior: "smooth" });
+      ref.current?.scrollTo({
+        top: selectedIndex * ITEM_H,
+        behavior: "smooth",
+      });
       setLive(selectedIndex);
     }
   }, [selectedIndex]);
@@ -39,7 +42,10 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (!ref.current) return;
-      const idx = Math.max(0, Math.min(items.length - 1, Math.round(ref.current.scrollTop / ITEM_H)));
+      const idx = Math.max(
+        0,
+        Math.min(items.length - 1, Math.round(ref.current.scrollTop / ITEM_H)),
+      );
       ref.current.scrollTo({ top: idx * ITEM_H, behavior: "smooth" });
       setLive(idx);
       scrolling.current = false;
@@ -49,17 +55,25 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
 
   return (
     <div className="relative flex-1 overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[88px] bg-gradient-to-b from-white to-transparent dark:from-gray-900" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[88px] bg-gradient-to-t from-white to-transparent dark:from-gray-900" />
-      <div className="pointer-events-none absolute inset-x-4 z-20 border-t border-gray-200 dark:border-gray-700" style={{ top: PAD * ITEM_H }} />
-      <div className="pointer-events-none absolute inset-x-4 z-20 border-b border-gray-200 dark:border-gray-700" style={{ top: (PAD + 1) * ITEM_H }} />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-22 bg-linear-to-b from-white to-transparent dark:from-gray-900" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-22 bg-linear-to-t from-white to-transparent dark:from-gray-900" />
+      <div
+        className="pointer-events-none absolute inset-x-4 z-20 border-t border-gray-200 dark:border-gray-700"
+        style={{ top: PAD * ITEM_H }}
+      />
+      <div
+        className="pointer-events-none absolute inset-x-4 z-20 border-b border-gray-200 dark:border-gray-700"
+        style={{ top: (PAD + 1) * ITEM_H }}
+      />
       <div
         ref={ref}
         onScroll={handleScroll}
         className="overflow-y-scroll [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         style={{ height: VISIBLE * ITEM_H, scrollSnapType: "y mandatory" }}
       >
-        {Array.from({ length: PAD }, (_, i) => <div key={`t${i}`} style={{ height: ITEM_H }} />)}
+        {Array.from({ length: PAD }, (_, i) => (
+          <div key={`t${i}`} style={{ height: ITEM_H }} />
+        ))}
         {items.map((label, i) => {
           const dist = Math.abs(i - live);
           return (
@@ -82,7 +96,9 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
             </div>
           );
         })}
-        {Array.from({ length: PAD }, (_, i) => <div key={`b${i}`} style={{ height: ITEM_H }} />)}
+        {Array.from({ length: PAD }, (_, i) => (
+          <div key={`b${i}`} style={{ height: ITEM_H }} />
+        ))}
       </div>
     </div>
   );
@@ -92,7 +108,12 @@ function WheelColumn({ items, selectedIndex, onChange }: ColumnProps) {
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
-interface CalDay { day: number; month: number; year: number; current: boolean }
+interface CalDay {
+  day: number;
+  month: number;
+  year: number;
+  current: boolean;
+}
 
 function BuildCalendar(year: number, month: number): CalDay[] {
   const firstDow = new Date(year, month - 1, 1).getDay();
@@ -104,7 +125,12 @@ function BuildCalendar(year: number, month: number): CalDay[] {
   const nextY = month === 12 ? year + 1 : year;
   const days: CalDay[] = [];
   for (let i = firstDow - 1; i >= 0; i--)
-    days.push({ day: daysInPrev - i, month: prevM, year: prevY, current: false });
+    days.push({
+      day: daysInPrev - i,
+      month: prevM,
+      year: prevY,
+      current: false,
+    });
   for (let d = 1; d <= daysInMonth; d++)
     days.push({ day: d, month, year, current: true });
   let nd = 1;
@@ -116,7 +142,7 @@ function BuildCalendar(year: number, month: number): CalDay[] {
 // ── Main BirthDatePicker ──────────────────────────────────────────────────
 
 interface Props {
-  value: string;       // "YYYY-MM-DD" or ""
+  value: string; // "YYYY-MM-DD" or ""
   onConfirm: (v: string) => void;
   loading?: boolean;
 }
@@ -139,7 +165,10 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
   const [mode, setMode] = useState<"calendar" | "wheel">("calendar");
 
   const currYear = new Date().getFullYear();
-  const years = Array.from({ length: currYear - 1923 }, (_, i) => `${currYear - i}년`);
+  const years = Array.from(
+    { length: currYear - 1923 },
+    (_, i) => `${currYear - i}년`,
+  );
   const months = Array.from({ length: 12 }, (_, i) => `${i + 1}월`);
   const [wYIdx, setWYIdx] = useState(Math.max(0, years.indexOf(`${viewY}년`)));
   const [wMIdx, setWMIdx] = useState(viewM - 1);
@@ -151,14 +180,18 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
   }
 
   function PrevMonth() {
-    if (viewM === 1) { setViewY(y => y - 1); setViewM(12); }
-    else setViewM(m => m - 1);
+    if (viewM === 1) {
+      setViewY((y) => y - 1);
+      setViewM(12);
+    } else setViewM((m) => m - 1);
   }
 
   function NextMonth() {
     if (viewY >= todayY && viewM >= todayM) return;
-    if (viewM === 12) { setViewY(y => y + 1); setViewM(1); }
-    else setViewM(m => m + 1);
+    if (viewM === 12) {
+      setViewY((y) => y + 1);
+      setViewM(1);
+    } else setViewM((m) => m + 1);
   }
 
   function SelectDay(cell: CalDay) {
@@ -178,7 +211,9 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
   }
 
   function Confirm() {
-    onConfirm(`${selY}-${String(selM).padStart(2, "0")}-${String(selD).padStart(2, "0")}`);
+    onConfirm(
+      `${selY}-${String(selM).padStart(2, "0")}-${String(selD).padStart(2, "0")}`,
+    );
   }
 
   // ── Wheel view ────────────────────────────────────────────────────────
@@ -192,18 +227,37 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
             onClick={() => setMode("calendar")}
             className="flex items-center gap-1 text-sm text-gray-500 transition hover:text-gray-700 dark:hover:text-gray-300"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="M15 18l-6-6 6-6" />
             </svg>
             달력으로
           </button>
-          <span className="flex-1 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">연도 / 월 선택</span>
+          <span className="flex-1 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">
+            연도 / 월 선택
+          </span>
           <div className="w-16" />
         </div>
         <div className="flex overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
-          <WheelColumn items={years} selectedIndex={wYIdx} onChange={setWYIdx} />
+          <WheelColumn
+            items={years}
+            selectedIndex={wYIdx}
+            onChange={setWYIdx}
+          />
           <div className="w-px self-stretch bg-gray-100 dark:bg-gray-800" />
-          <WheelColumn items={months} selectedIndex={wMIdx} onChange={setWMIdx} />
+          <WheelColumn
+            items={months}
+            selectedIndex={wMIdx}
+            onChange={setWMIdx}
+          />
         </div>
         <button
           type="button"
@@ -230,7 +284,16 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
           onClick={PrevMonth}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
@@ -256,7 +319,16 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
           disabled={atMaxMonth}
           className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 disabled:opacity-30 dark:hover:bg-gray-800"
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
@@ -268,7 +340,11 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
           <div
             key={w}
             className={`py-1 text-center text-xs font-semibold ${
-              i === 0 ? "text-red-400" : i === 6 ? "text-blue-400" : "text-gray-400"
+              i === 0
+                ? "text-red-400"
+                : i === 6
+                  ? "text-blue-400"
+                  : "text-gray-400"
             }`}
           >
             {w}
@@ -279,9 +355,17 @@ export default function BirthDatePicker({ value, onConfirm, loading }: Props) {
       {/* Day cells */}
       <div className="grid grid-cols-7">
         {calDays.map((cell, i) => {
-          const isSel = cell.current && cell.year === selY && cell.month === selM && cell.day === selD;
-          const isToday = cell.year === todayY && cell.month === todayM && cell.day === todayD;
-          const isFuture = new Date(cell.year, cell.month - 1, cell.day) > today;
+          const isSel =
+            cell.current &&
+            cell.year === selY &&
+            cell.month === selM &&
+            cell.day === selD;
+          const isToday =
+            cell.year === todayY &&
+            cell.month === todayM &&
+            cell.day === todayD;
+          const isFuture =
+            new Date(cell.year, cell.month - 1, cell.day) > today;
           const col = i % 7;
           return (
             <div key={i} className="flex h-9 items-center justify-center">
