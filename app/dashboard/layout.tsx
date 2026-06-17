@@ -4,17 +4,25 @@ import UserMenu from "@/components/UserMenu";
 import Sidebar from "@/components/Sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
 import ContactFooter from "@/components/ContactForm";
-import { GetUser, GetSubscription } from "@/lib/supabase/server";
+import { CreateClient, GetUser, GetSubscription } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const user = await GetUser();
+  // getSession()은 쿠키만 읽어 네트워크 없음 → userId를 즉시 확보
+  const supabase = await CreateClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect("/auth/login");
+
+  // auth 서버 검증과 subscription 조회를 병렬 실행
+  const [user, sub] = await Promise.all([
+    GetUser(),
+    GetSubscription(session.user.id),
+  ]);
   if (!user) redirect("/auth/login");
 
-  const sub = await GetSubscription(user.id);
   const plan = sub?.plan ?? "free";
   const customerId = sub?.stripe_customer_id ?? null;
 

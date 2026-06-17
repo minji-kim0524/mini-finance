@@ -5,19 +5,23 @@ import type { FinanceRow } from "@/types/finance";
 import { GetUser, GetSubscription, CreateClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const user = await GetUser();
-  if (!user) redirect("/auth/login");
-
+  // getSession()은 쿠키만 읽어 네트워크 없음 → userId를 즉시 확보
   const supabase = await CreateClient();
-  const [{ data: reports }, sub] = await Promise.all([
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) redirect("/auth/login");
+
+  // auth 서버 검증과 reports 조회를 병렬 실행
+  const [user, { data: reports }] = await Promise.all([
+    GetUser(),
     supabase
       .from("reports")
       .select("id, name, row_count, total_revenue, gross_profit, operating_profit, created_at")
-      .eq("user_id", user.id)
+      .eq("user_id", session.user.id)
       .order("created_at", { ascending: false }),
-    GetSubscription(user.id), // layout에서 이미 조회한 결과를 캐시에서 반환 (네트워크 없음)
   ]);
+  if (!user) redirect("/auth/login");
 
+  const sub = await GetSubscription(user.id); // layout이 병렬로 시작한 캐시 결과 반환
   const plan = sub?.plan ?? "free";
 
   const mostRecent = reports?.[0] ?? null;
