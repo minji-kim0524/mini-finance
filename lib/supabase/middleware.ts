@@ -9,9 +9,9 @@ export async function UpdateSession(request: NextRequest) {
   const isAuthRoute = pathname.startsWith("/auth/");
   const isApiRoute = pathname.startsWith("/api/");
 
-  // 서버 재시작 감지 (개발 환경 전용)
-  // 배포(Vercel 서버리스)에서는 요청마다 인스턴스가 달라 이 체크를 사용할 수 없음
-  if (process.env.NODE_ENV === "development" && !isAuthRoute && !isApiRoute) {
+  // 새 배포 감지: 쿠키의 배포 ID와 현재 배포 ID가 다르면 세션을 초기화하고 로그인으로 리다이렉트
+  // 개발: 서버 재시작 시 / 프로덕션: 새 Vercel 배포 시 동작
+  if (!isAuthRoute && !isApiRoute) {
     const instanceCookie = request.cookies.get(INSTANCE_COOKIE)?.value;
     if (instanceCookie !== SERVER_INSTANCE_ID) {
       const url = request.nextUrl.clone();
@@ -68,14 +68,12 @@ export async function UpdateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 인스턴스 쿠키 갱신 (개발 환경 전용)
-  if (process.env.NODE_ENV === "development") {
-    supabaseResponse.cookies.set(INSTANCE_COOKIE, SERVER_INSTANCE_ID, {
-      httpOnly: true,
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7,
-    });
-  }
+  // 배포 ID 쿠키 갱신 (매 요청마다 최신값으로 유지)
+  supabaseResponse.cookies.set(INSTANCE_COOKIE, SERVER_INSTANCE_ID, {
+    httpOnly: true,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
 
   return supabaseResponse;
 }
