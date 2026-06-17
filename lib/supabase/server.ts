@@ -1,6 +1,7 @@
 // 서버용 (API Route, Server Components)
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 export async function CreateClient() {
   const cookieStore = await cookies();
@@ -25,3 +26,20 @@ export async function CreateClient() {
     },
   );
 }
+
+// 같은 요청 안에서 여러 Server Component가 호출해도 네트워크 요청은 1번만 발생
+export const GetUser = cache(async () => {
+  const supabase = await CreateClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+});
+
+export const GetSubscription = cache(async (userId: string) => {
+  const supabase = await CreateClient();
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("plan, stripe_customer_id")
+    .eq("user_id", userId)
+    .single();
+  return data;
+});

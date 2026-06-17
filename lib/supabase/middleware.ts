@@ -54,6 +54,13 @@ export async function UpdateSession(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
+  // 루트 경로 → 쿠키 기반 세션 체크로 리다이렉트 (네트워크 요청 없음)
+  if (pathname === "/") {
+    const url = request.nextUrl.clone();
+    url.pathname = session ? "/dashboard" : "/auth/login";
+    return NextResponse.redirect(url);
+  }
+
   // 비로그인 → 로그인 페이지로 리다이렉트
   if (!session && pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();

@@ -1,26 +1,20 @@
-import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "@/components/UserMenu";
 import Sidebar from "@/components/Sidebar";
 import ThemeToggle from "@/components/ThemeToggle";
 import ContactFooter from "@/components/ContactForm";
+import { GetUser, GetSubscription } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await CreateClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await GetUser();
   if (!user) redirect("/auth/login");
 
-  const { data: sub } = await supabase
-    .from("subscriptions")
-    .select("plan, stripe_customer_id")
-    .eq("user_id", user.id)
-    .single();
-
+  const sub = await GetSubscription(user.id);
   const plan = sub?.plan ?? "free";
   const customerId = sub?.stripe_customer_id ?? null;
 

@@ -1,25 +1,21 @@
-import { CreateClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import { UpgradeBanner } from "@/app/utils/ReportCards";
 import type { FinanceRow } from "@/types/finance";
+import { GetUser, GetSubscription, CreateClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const supabase = await CreateClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await GetUser();
   if (!user) redirect("/auth/login");
 
-  const [{ data: reports }, { data: sub }] = await Promise.all([
+  const supabase = await CreateClient();
+  const [{ data: reports }, sub] = await Promise.all([
     supabase
       .from("reports")
       .select("id, name, row_count, total_revenue, gross_profit, operating_profit, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false }),
-    supabase
-      .from("subscriptions")
-      .select("plan")
-      .eq("user_id", user.id)
-      .single(),
+    GetSubscription(user.id), // layout에서 이미 조회한 결과를 캐시에서 반환 (네트워크 없음)
   ]);
 
   const plan = sub?.plan ?? "free";
