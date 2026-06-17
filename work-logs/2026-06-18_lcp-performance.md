@@ -1,13 +1,13 @@
-# LCP 성능 개선 — Supabase 중복 호출 제거
+# LCP 성능 개선 — Supabase 중복 호출 제거 및 병렬 실행
 
 **날짜:** 2026-06-18  
-**커밋:** `42a143b`
+**커밋:** `42a143b`, `5beff54`
 
 ---
 
 ## 요구 사항
 
-배포 환경 LCP(Largest Contentful Paint) 측정값 **8.56s** → 개선
+배포 환경 LCP(Largest Contentful Paint) 측정값 **8.56s** → 개선 (1차 적용 후 **4.46s** 잔존 → 추가 개선)
 
 ---
 
@@ -95,6 +95,79 @@ if (pathname === "/") {
 | 대시보드 렌더 시 auth.getUser() | × 2 (layout + page) | × 1 (cache() 공유) |
 | 대시보드 렌더 시 subscriptions 쿼리 | × 2 (layout + page) | × 1 (cache() 공유) |
 | 총 불필요한 호출 | 3건 | 0건 |
+
+---
+
+---
+
+## 2차 개선 — auth 검증과 DB 쿼리 병렬 실행 (`5beff54`)
+
+### 남은 문제
+
+1차 적용 후에도 LCP 4.46s 잔존. LCP 요소는 `AnalyticsDashboard` 내부의  
+`<p>엑셀 파일을 업로드하면 여기에 표시됩니다.</p>`.
+
+### 원인
+
+`cache()`를 적용했음에도 **순차 대기**가 남아 있었음:
+
+- `layout.tsx`: `await GetUser()` → 완료 후 → `await GetSubscription()` (순차, ~500ms 낭비)
+- `page.tsx`: `await GetUser()` → 완료 후 → reports 쿼리 시작 (순차, ~500ms 낭비)
+
+`auth.getUser()`는 Supabase Auth 서버에 검증 요청을 보내는 네트워크 호출이다.  
+그 완료를 기다린 뒤에야 subscription / reports 쿼리가 시작되므로, 두 요청이 직렬로 실행된다.
+
+### 해결 — `getSession()`으로 userId 선확보 후 병렬 실행
+
+`getSession()`은 쿠키의 JWT를 파싱해 userId를 반환한다 **(네트워크 없음, 즉시)**.  
+이 userId로 DB 쿼리를 먼저 시작하고, `getUser()`(auth 서버 검증)와 병렬로 실행한다.
+
+```ts
+// layout.tsx — 병렬 실행 적용
+const supabase = await CreateClient();
+const { data: { session } } = await supabase.auth.getSession(); // 쿠키만 읽음
+if (!session) redirect("/auth/login");
+
+const [user, sub] = await Promise.all([
+  GetUser(),                        // auth 서버 검증 (네트워크)
+  GetSubscription(session.user.id), // subscription 쿼리 (네트워크) — 동시에 시작
+]);
+if (!user) redirect("/auth/login");
+```
+
+```ts
+// page.tsx — 병렬 실행 적용
+const supabase = await CreateClient();
+const { data: { session } } = await supabase.auth.getSession(); // 쿠키만 읽음
+if (!session) redirect("/auth/login");
+
+const [user, { data: reports }] = await Promise.all([
+  GetUser(),                                   // auth 서버 검증 (네트워크)
+  supabase.from("reports").select(...) ...     // reports 쿼리 (네트워크) — 동시에 시작
+]);
+if (!user) redirect("/auth/login");
+
+const sub = await GetSubscription(user.id);   // layout이 병렬로 시작한 캐시 결과 즉시 반환
+```
+
+### 개선 전후 타임라인
+
+| | 개선 전 (1차 이후) | 개선 후 (2차) |
+|---|---|---|
+| layout 서버 처리 | auth(500ms) → sub(500ms) = **1000ms 순차** | auth \|\| sub = **~500ms 병렬** |
+| page 서버 처리 | auth 캐시 히트 후 reports(500ms) | auth \|\| reports = **~500ms 병렬** |
+| layout + page 전체 | ~1500ms | **~500ms** |
+
+---
+
+## 변경 파일 (전체)
+
+| 파일 | 커밋 | 변경 내용 |
+|---|---|---|
+| `lib/supabase/server.ts` | `42a143b` | `GetUser`, `GetSubscription` 캐시 헬퍼 추가 |
+| `app/dashboard/layout.tsx` | `42a143b`, `5beff54` | 캐시 헬퍼 사용 + auth/subscription 병렬화 |
+| `app/dashboard/page.tsx` | `42a143b`, `5beff54` | 캐시 헬퍼 사용 + auth/reports 병렬화 |
+| `lib/supabase/middleware.ts` | `42a143b` | 루트(`/`) 경로 리다이렉트 추가 |
 
 ---
 
