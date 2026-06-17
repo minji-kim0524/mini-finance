@@ -1,13 +1,14 @@
-# LCP 성능 개선 — Supabase 중복 호출 제거 및 병렬 실행
+# LCP 성능 개선 및 배포 시 로그인 초기화
 
 **날짜:** 2026-06-18  
-**커밋:** `42a143b`, `5beff54`
+**커밋:** `42a143b`, `5beff54`, `b99ff43`
 
 ---
 
 ## 요구 사항
 
-배포 환경 LCP(Largest Contentful Paint) 측정값 **8.56s** → 개선 (1차 적용 후 **4.46s** 잔존 → 추가 개선)
+1. 배포 링크 클릭 시 기존 로그인 상태가 유지되는 문제 수정
+2. LCP **8.56s** → 목표 **2.5s 이하** (1차 `4.46s`, 2차 `4.82s` 잔존 → 3차 추가 개선)
 
 ---
 
@@ -160,14 +161,70 @@ const sub = await GetSubscription(user.id);   // layout이 병렬로 시작한 �
 
 ---
 
+---
+
+## 3차 개선 — 배포 시 로그인 초기화 + recharts 서버 번들 제외 (`b99ff43`)
+
+### 남은 문제
+
+- 배포 링크 클릭 시 기존 로그인 유지 → 새 배포임에도 대시보드로 바로 진입
+- LCP 4.82s 잔존 (2차 재측정) → LCP 요소가 여전히 `AnalyticsDashboard` 내부 텍스트
+
+### 원인 1 — 배포 감지 로직이 프로덕션에서 비활성화
+
+기존 코드는 `SERVER_INSTANCE_ID`로 서버 재시작을 감지해 세션을 초기화했으나, Vercel 서버리스에서는 요청마다 `randomUUID()`가 달라져 항상 세션 초기화가 발생하므로 `NODE_ENV === "development"` 가드로 개발 환경에서만 동작하도록 제한되어 있었다.
+
+**해결**: Vercel이 제공하는 `VERCEL_DEPLOYMENT_ID` 환경변수를 활용. 동일 배포 내에서는 고정값이고, 새 배포 시 값이 바뀐다.
+
+```ts
+// lib/serverInstance.ts
+export const SERVER_INSTANCE_ID = process.env.VERCEL_DEPLOYMENT_ID ?? randomUUID();
+```
+
+미들웨어에서 `NODE_ENV === "development"` 가드를 제거해 프로덕션에서도 동작:
+```ts
+// 개발/프로덕션 모두: 배포 ID가 다르면 세션 초기화 + 로그인으로 리다이렉트
+if (!isAuthRoute && !isApiRoute) {
+  if (instanceCookie !== SERVER_INSTANCE_ID) { ... }
+}
+```
+
+### 원인 2 — recharts가 서버 번들에 포함되어 콜드 스타트 증가
+
+`AnalyticsDashboard`는 `"use client"` 컴포넌트지만, 서버 컴포넌트(`page.tsx`)에서 정적 import되면 SSR 시 recharts 전체가 서버 번들에 포함된다. 이는 Vercel 서버리스 함수의 콜드 스타트를 증가시키고, 클라이언트에서 hydration이 완료되기 전까지 LCP 텍스트 페인트가 지연될 수 있다.
+
+**해결**: `next/dynamic`으로 recharts를 서버 번들에서 완전히 제거.
+
+```tsx
+// app/dashboard/DashboardChart.tsx ("use client")
+const AnalyticsDashboard = dynamic(() => import("./AnalyticsDashboard"), {
+  ssr: false,  // 서버 번들 제외
+  loading: () => <div>차트 불러오는 중…</div>,
+});
+```
+
+(Next.js에서 `ssr: false`는 Server Component에서 직접 사용 불가 → `"use client"` 래퍼 컴포넌트로 분리)
+
+**추가**: 리포트가 없는 경우 빈 상태를 `page.tsx`(서버 컴포넌트)에서 직접 렌더링.  
+→ LCP 텍스트가 SSR HTML에 포함되어 JS 로드 없이 즉시 페인트 가능.
+
+```
+리포트 없음: page.tsx → 빈 상태 직접 렌더링 (recharts 미포함)
+리포트 있음: page.tsx → DashboardChart → AnalyticsDashboard (클라이언트에서 로드)
+```
+
+---
+
 ## 변경 파일 (전체)
 
 | 파일 | 커밋 | 변경 내용 |
 |---|---|---|
 | `lib/supabase/server.ts` | `42a143b` | `GetUser`, `GetSubscription` 캐시 헬퍼 추가 |
 | `app/dashboard/layout.tsx` | `42a143b`, `5beff54` | 캐시 헬퍼 사용 + auth/subscription 병렬화 |
-| `app/dashboard/page.tsx` | `42a143b`, `5beff54` | 캐시 헬퍼 사용 + auth/reports 병렬화 |
-| `lib/supabase/middleware.ts` | `42a143b` | 루트(`/`) 경로 리다이렉트 추가 |
+| `app/dashboard/page.tsx` | `42a143b`, `5beff54`, `b99ff43` | 캐시 헬퍼 + 병렬화 + 빈 상태 서버 렌더링 분리 |
+| `lib/supabase/middleware.ts` | `42a143b`, `b99ff43` | 루트 리다이렉트 + 배포 감지 dev 가드 제거 |
+| `lib/serverInstance.ts` | `b99ff43` | `VERCEL_DEPLOYMENT_ID` 추가 |
+| `app/dashboard/DashboardChart.tsx` | `b99ff43` | `ssr:false` dynamic import 래퍼 (신규) |
 
 ---
 
