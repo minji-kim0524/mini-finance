@@ -166,12 +166,13 @@ export default function SignupPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="flex rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
+          <div role="group" aria-label="계정 유형 선택" className="flex rounded-2xl bg-slate-100 p-1 dark:bg-slate-800">
             {(["personal", "business"] as const).map((type) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => HandleAccountTypeChange(type)}
+                aria-pressed={accountType === type}
                 className={`flex-1 rounded-xl py-2 text-sm font-semibold transition ${
                   accountType === type
                     ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
@@ -183,14 +184,17 @@ export default function SignupPage() {
             ))}
           </div>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="signup-name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             {accountType === "personal" ? "이름" : "회사명"}<Required />
             <input
+              id="signup-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
               placeholder={accountType === "personal" ? "홍길동" : "주식회사 예시"}
+              required
+              autoComplete={accountType === "personal" ? "name" : "organization"}
               className={inputCls}
             />
           </label>
@@ -237,38 +241,47 @@ export default function SignupPage() {
             )}
           </div>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="signup-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             이메일<Required />
             <input
+              id="signup-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
               placeholder="example@email.com"
+              required
+              autoComplete="email"
               className={inputCls}
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="signup-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호<Required />
             <input
+              id="signup-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
               placeholder="6자 이상"
+              required
+              autoComplete="new-password"
               className={inputCls}
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호 확인<Required />
             <input
+              id="signup-confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleSignup(); }}
               placeholder="비밀번호 확인"
+              required
+              autoComplete="new-password"
               className={inputCls}
             />
           </label>
@@ -279,12 +292,13 @@ export default function SignupPage() {
             <button
               type="button"
               onClick={() => setPrivacyExpanded((prev) => !prev)}
+              aria-expanded={privacyExpanded}
+              aria-controls="privacy-content"
               className="flex w-full items-center justify-between px-4 py-3 text-left"
             >
               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                 개인정보처리방침 동의<Required />
               </span>
-              {/* 펼침 상태에 따라 화살표 방향 변경 */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${privacyExpanded ? "rotate-180" : ""}`}
@@ -292,6 +306,7 @@ export default function SignupPage() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
@@ -299,7 +314,7 @@ export default function SignupPage() {
 
             {/* 펼쳐질 때 개인정보처리방침 주요 내용 표시 */}
             {privacyExpanded && (
-              <div className="max-h-52 overflow-y-auto border-t border-slate-200 px-4 py-3 dark:border-slate-700">
+              <div id="privacy-content" className="max-h-52 overflow-y-auto border-t border-slate-200 px-4 py-3 dark:border-slate-700">
                 <div className="space-y-3 text-xs leading-relaxed text-slate-600 dark:text-slate-400">
                   <div>
                     <p className="font-semibold text-slate-700 dark:text-slate-300">수집하는 개인정보</p>
@@ -342,7 +357,7 @@ export default function SignupPage() {
             </label>
           </div>
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <button
             type="button"

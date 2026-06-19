@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
@@ -35,6 +35,7 @@ function PlanFeatureItem({
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2.5}
+        aria-hidden="true"
       >
         {disabled ? (
           <path
@@ -52,6 +53,55 @@ function PlanFeatureItem({
       </svg>
       {children}
     </li>
+  );
+}
+
+function CancelConfirmModal({ onConfirm, onClose }: { onConfirm: () => void; onClose: () => void }) {
+  const confirmBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    confirmBtnRef.current?.focus();
+    function HandleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", HandleKeyDown);
+    return () => document.removeEventListener("keydown", HandleKeyDown);
+  }, [onClose]);
+
+  return (
+    <div
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="cancel-modal-title"
+      aria-describedby="cancel-modal-desc"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+    >
+      <div className="w-80 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
+        <p id="cancel-modal-title" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          변경사항 취소
+        </p>
+        <p id="cancel-modal-desc" className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          변경된 내용은 저장되지 않습니다. 계속 하시겠습니까?
+        </p>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-gray-300 px-5 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
+          >
+            아니오
+          </button>
+          <button
+            ref={confirmBtnRef}
+            type="button"
+            onClick={onConfirm}
+            className="rounded-xl bg-gray-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -366,13 +416,14 @@ export default function ProfileClient({
         <span className="text-base font-bold text-gray-900 dark:text-gray-100">
           계정 유형
         </span>
-        <div className="flex overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
+        <div role="group" aria-label="계정 유형 선택" className="flex overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800">
           {(["personal", "business"] as const).map((type) => (
             <button
               key={type}
               type="button"
               onClick={() => HandleTypeSwitch(type)}
               disabled={!hasBoth}
+              aria-pressed={activeType === type}
               className={`flex-1 py-3 text-sm font-semibold transition ${
                 activeType === type
                   ? "rounded-xl border border-green-500 bg-white text-green-500 dark:bg-gray-900"
@@ -385,23 +436,25 @@ export default function ProfileClient({
             </button>
           ))}
         </div>
-        {typeError && <p className="text-sm text-red-500">{typeError}</p>}
+        {typeError && <p role="alert" className="text-sm text-red-500">{typeError}</p>}
       </div>
 
       {/* 이름 */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-gray-900 dark:text-gray-100">
+          <label htmlFor="profile-name" className="text-base font-bold text-gray-900 dark:text-gray-100">
             이름
-          </span>
+          </label>
           <CheckDot filled={!!nameValue.trim()} />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-900">
           <input
+            id="profile-name"
             type="text"
             value={nameValue}
             onChange={(e) => setNameValue(e.target.value)}
             placeholder="이름을 입력하세요"
+            autoComplete="name"
             className="flex-1 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400 dark:text-gray-100"
           />
         </div>
@@ -534,6 +587,8 @@ export default function ProfileClient({
         </div>
         {saveMessage && (
           <p
+            role={saveMessage.type === "error" ? "alert" : "status"}
+            aria-live={saveMessage.type === "error" ? "assertive" : "polite"}
             className={`text-center text-sm font-medium ${saveMessage.type === "success" ? "text-green-500" : "text-red-500"}`}
           >
             {saveMessage.text}
@@ -543,28 +598,10 @@ export default function ProfileClient({
 
       {/* 취소 확인 모달 */}
       {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-80 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-900">
-            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-              변경사항 취소
-            </p>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-              변경된 내용은 저장되지 않습니다. 계속 하시겠습니까?
-            </p>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowCancelModal(false);
-                  router.back();
-                }}
-                className="rounded-xl bg-gray-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
-              >
-                확인
-              </button>
-            </div>
-          </div>
-        </div>
+        <CancelConfirmModal
+          onConfirm={() => { setShowCancelModal(false); router.back(); }}
+          onClose={() => setShowCancelModal(false)}
+        />
       )}
 
       {/* 요금제 */}

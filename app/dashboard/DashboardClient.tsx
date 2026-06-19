@@ -81,9 +81,10 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
             type="checkbox"
             checked={allSelected}
             onChange={ToggleAll}
+            aria-label={allSelected ? "전체 선택 해제" : "전체 선택"}
             className="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600 dark:border-slate-600"
           />
-          <span className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="text-xs text-slate-500 dark:text-slate-400" aria-hidden="true">
             {someSelected ? `${selected.size}개 선택됨` : "전체 선택"}
           </span>
         </label>
@@ -101,7 +102,11 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
       </div>
 
       {confirm && (
-        <div className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/20">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 px-4 py-3 dark:border-red-900/50 dark:bg-red-900/20"
+        >
           <p className="text-sm text-red-700 dark:text-red-400">
             선택한 <span className="font-semibold">{selected.size}개</span> 내역을 삭제할까요?
           </p>
@@ -117,6 +122,7 @@ export default function DashboardClient({ initialReports, plan }: { initialRepor
               type="button"
               onClick={HandleDeleteSelected}
               disabled={deleting}
+              aria-label={`선택한 ${selected.size}개 내역 삭제 확인`}
               className="rounded-xl bg-red-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 disabled:opacity-50"
             >
               {deleting ? "삭제 중…" : "삭제"}

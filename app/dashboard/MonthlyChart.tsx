@@ -57,12 +57,13 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
         <h2 className="text-base font-semibold text-slate-800 dark:text-slate-200">손익 추이</h2>
 
         <div className="flex items-center gap-2">
-          <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
+          <div role="group" aria-label="기간 선택" className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
             {periodOptions.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => setPeriod(opt.value)}
+                aria-pressed={period === opt.value}
                 className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition ${
                   period === opt.value
                     ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
@@ -74,12 +75,13 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
             ))}
           </div>
 
-          <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
+          <div role="group" aria-label="차트 유형 선택" className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
             {chartOptions.map((opt) => (
               <button
                 key={opt.value}
                 type="button"
                 onClick={() => setChartType(opt.value)}
+                aria-pressed={chartType === opt.value}
                 className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition ${
                   chartType === opt.value
                     ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"
@@ -93,6 +95,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
         </div>
       </div>
 
+      <div role="img" aria-label={`손익 추이 ${chartType === "bar" ? "막대" : "꺾은선"} 차트 (${period === "monthly" ? "월별" : period === "quarterly" ? "분기별" : "반기별"})`}>
       <ResponsiveContainer width="100%" height={260}>
         {chartType === "bar" ? (
           <BarChart data={data} barCategoryGap="30%" barGap={3}>
@@ -137,6 +140,7 @@ export default function MonthlyChart({ rows }: { rows: FinanceRow[] }) {
           </LineChart>
         )}
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }

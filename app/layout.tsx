@@ -41,6 +41,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-[--background] text-[--foreground]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:left-4 focus:top-4 focus:rounded-xl focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-blue-600 focus:shadow-lg dark:focus:bg-slate-900 dark:focus:text-blue-400"
+        >
+          본문으로 바로가기
+        </a>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

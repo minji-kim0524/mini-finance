@@ -86,26 +86,34 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-4">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             이메일
             <input
+              id="login-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleLogin(); }}
               placeholder="example@email.com"
+              required
+              autoComplete="email"
+              aria-describedby={error ? "login-error" : undefined}
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700"
             />
           </label>
 
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
             비밀번호
             <input
+              id="login-password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") HandleLogin(); }}
               placeholder="비밀번호"
+              required
+              autoComplete="current-password"
+              aria-describedby={error ? "login-error" : undefined}
               className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-700"
             />
           </label>
@@ -116,7 +124,7 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          {error && <p id="login-error" role="alert" className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
           <button
             type="button"
@@ -166,7 +174,7 @@ export default function LoginPage() {
 
 function KakaoIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.305 0.5 0.5 3.467 0.5 7.12c0 2.335 1.556 4.39 3.905 5.545l-.99 3.698c-.088.327.374.589.637.356l4.306-3.026c.21.016.423.025.642.025 4.695 0 8.5-2.967 8.5-6.62C17.5 3.467 13.695.5 9 .5z" fill="#191919"/>
     </svg>
   );
@@ -174,7 +182,7 @@ function KakaoIcon() {
 
 function GoogleIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
       <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
       <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
       <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>

@@ -54,18 +54,21 @@ export function TabSwitcher<T extends string>({
   tabs,
   active,
   onChange,
+  label,
 }: {
   tabs: readonly Tab<T>[];
   active: T;
   onChange: (value: T) => void;
+  label?: string;
 }) {
   return (
-    <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
+    <div role="group" aria-label={label} className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
       {tabs.map((t) => (
         <button
           key={t.value}
           type="button"
           onClick={() => onChange(t.value)}
+          aria-pressed={active === t.value}
           className={`rounded-[10px] px-3 py-1.5 text-xs font-medium transition ${
             active === t.value
               ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-slate-100"

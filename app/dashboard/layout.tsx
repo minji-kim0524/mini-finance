@@ -59,7 +59,7 @@ export default async function DashboardLayout({
       <div className="flex flex-1 overflow-hidden">
         <Sidebar plan={plan} />
         <div className="flex flex-1 flex-col overflow-auto">
-          <main className="flex-1 px-6 py-8">{children}</main>
+          <main id="main-content" className="flex-1 px-6 py-8">{children}</main>
           <ContactFooter />
         </div>
       </div>

@@ -60,11 +60,15 @@ export default function UploadClient() {
 
         {/* Drop zone */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label={file ? `선택된 파일: ${file.name}. 클릭하거나 Enter를 눌러 파일을 변경하세요` : "엑셀 파일을 드래그하거나 클릭해서 선택하세요"}
           onClick={() => inputRef.current?.click()}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={HandleDrop}
-          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 transition ${
+          className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed px-6 py-14 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
             dragging
               ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
               : "border-slate-300 bg-white hover:border-blue-400 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-600 dark:hover:bg-blue-900/20"
@@ -74,12 +78,12 @@ export default function UploadClient() {
           {file ? (
             <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{file.name}</p>
           ) : (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-sm text-slate-500 dark:text-slate-400" aria-hidden="true">
               파일을 드래그하거나 <span className="font-semibold text-blue-600 dark:text-blue-400">클릭해서 선택</span>하세요
             </p>
           )}
-          <p className="text-xs text-slate-400 dark:text-slate-500">.xlsx, .xls 지원</p>
-          <input ref={inputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) HandleFile(f); }} />
+          <p className="text-xs text-slate-400 dark:text-slate-500" aria-hidden="true">.xlsx, .xls 지원</p>
+          <input ref={inputRef} type="file" accept=".xlsx,.xls" aria-label="엑셀 파일 선택" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) HandleFile(f); }} />
         </div>
 
         <button
@@ -104,7 +108,7 @@ export default function UploadClient() {
         )}
 
         {state.status === "error" && (
-          <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
             {state.message}
           </p>
         )}
@@ -172,14 +176,20 @@ function FormatGuide() {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between px-5 py-4">
-        <button type="button" onClick={() => setOpen((v) => !v)} className="flex items-center gap-2 text-left">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="format-guide-content"
+          className="flex items-center gap-2 text-left"
+        >
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">업로드 형식 가이드</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg xmlns="http://www.w3.org/2000/svg" className={`h-4 w-4 text-slate-400 transition-transform dark:text-slate-500 ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
           </svg>
         </button>
-        <button type="button" onClick={DownloadSample} className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <button type="button" onClick={DownloadSample} aria-label="예시 엑셀 파일 다운로드" className="flex items-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
           </svg>
           예시 파일 다운로드
@@ -187,7 +197,7 @@ function FormatGuide() {
       </div>
 
       {open && (
-        <div className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4 dark:border-slate-800">
+        <div id="format-guide-content" className="border-t border-slate-100 px-5 pb-5 pt-4 space-y-4 dark:border-slate-800">
           <div className="space-y-1.5">
             <p className="text-xs font-semibold text-slate-600 dark:text-slate-400">필수 컬럼 (헤더명 정확히 입력)</p>
             <div className="flex flex-wrap gap-2">
@@ -249,7 +259,7 @@ function FormatGuide() {
 
 function UploadIcon() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
     </svg>
   );

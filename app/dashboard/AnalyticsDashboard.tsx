@@ -166,6 +166,7 @@ export default function AnalyticsDashboard({
               value={selectedId}
               onChange={(e) => HandleReportChange(e.target.value)}
               disabled={loading}
+              aria-label="분석할 리포트 선택"
               className="rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-3 pr-7 text-xs text-slate-600 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
             >
               {reports.map((r) => (
@@ -173,13 +174,15 @@ export default function AnalyticsDashboard({
               ))}
             </select>
             {loading && (
-              <svg className="h-4 w-4 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <span role="status" aria-label="데이터 불러오는 중">
+                <svg className="h-4 w-4 animate-spin text-slate-400" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              </span>
             )}
           </div>
-          <TabSwitcher tabs={chartTabs} active={chartTab} onChange={setChartTab} />
+          <TabSwitcher tabs={chartTabs} active={chartTab} onChange={setChartTab} label="차트 유형 선택" />
         </div>
 
         <div className="p-6">
@@ -192,7 +195,7 @@ export default function AnalyticsDashboard({
                   <div className="mb-5 flex items-start justify-between">
                     <p className="pt-1.5 text-xs text-slate-500 dark:text-slate-400">매출 · 매출원가 · 판관비</p>
                     <div className="flex flex-col items-end gap-2">
-                      <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} />
+                      <TabSwitcher tabs={periodTabs} active={barPeriod} onChange={setBarPeriod} label="기간 선택" />
                       {barPeriod !== "yearly" && availableYears.length >= 2 && (
                         <TabSwitcher
                           tabs={availableYears.map((y) => ({ value: y, label: `${y}년` }))}
