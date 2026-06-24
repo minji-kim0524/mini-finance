@@ -1,5 +1,18 @@
 import type { AccountType } from '@/types/finance';
 
+// K-IFRS 제조원가명세서 해당 계정과목 (cogs 체크 이전에 먼저 분류)
+const mfgCostKeywords = [
+  // 재료비
+  '원재료비', '부재료비', '재료비', '직접재료비',
+  // 노무비
+  '노무비', '직접노무비', '기타노무비',
+  // 제조경비
+  '외주가공비', '외주비', '제조경비', '기타제조경비', '제조간접비',
+  '공장임차료', '공장전력비', '공장전기료', '공장수도료', '공장가스비',
+  '제조감가상각', '공장감가상각',
+  '공장소모품', '공장보험료', '공장수선비',
+];
+
 const cogsKeywords = [
   '매출원가', '상품원가', '제품원가', '공사원가', '분양원가',
   '매입', '원가',
@@ -95,6 +108,7 @@ const expenseKeywords = [
 ];
 
 export function ClassifyAccount(account: string): AccountType {
+  if (mfgCostKeywords.some((kw) => account.includes(kw))) return 'mfg_cost';
   if (cogsKeywords.some((kw) => account.includes(kw))) return 'cogs';
   if (assetKeywords.some((kw) => account.includes(kw))) return 'asset';
   if (liabilityKeywords.some((kw) => account.includes(kw))) return 'liability';

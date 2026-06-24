@@ -8,7 +8,7 @@ import { CalcPLSummary } from "@/lib/aggregator";
 import { FormatKRW } from "@/lib/format";
 import MonthlyChart from "../MonthlyChart";
 
-type Tab = "dashboard" | "income" | "balance" | "classify";
+type Tab = "dashboard" | "income" | "balance" | "mfg_cost" | "classify";
 
 // 금액 표시: 음수는 괄호, 0은 대시, 원 단위
 function FmtNum(n: number): string {
@@ -502,11 +502,116 @@ function EmptyState() {
   );
 }
 
+// ─── 제조원가명세서 뷰 ──────────────────────────────────────────────
+
+// K-IFRS 제조원가 세부 분류: 재료비 / 노무비 / 제조경비
+const mfgMaterialKw = ['재료비', '원재료', '부재료', '자재'];
+const mfgLaborKw    = ['노무비', '임금', '급료'];
+
+function SubClassifyMfgCost(account: string): 'material' | 'labor' | 'overhead' {
+  if (mfgMaterialKw.some(kw => account.includes(kw))) return 'material';
+  if (mfgLaborKw.some(kw => account.includes(kw)))    return 'labor';
+  return 'overhead';
+}
+
+function MfgCostView({ rows, compareRows }: { rows: FinanceRow[]; compareRows?: FinanceRow[] }) {
+  const mfgRows  = rows.filter(r => r.type === 'mfg_cost');
+  const cMfgRows = compareRows?.filter(r => r.type === 'mfg_cost') ?? null;
+
+  const material = useMemo(() => GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'material')), [rows]);
+  const labor    = useMemo(() => GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'labor')),    [rows]);
+  const overhead = useMemo(() => GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'overhead')), [rows]);
+
+  const cMaterial = useMemo(() => cMfgRows ? GroupByAccount(cMfgRows.filter(r => SubClassifyMfgCost(r.account) === 'material')) : null, [compareRows]);
+  const cLabor    = useMemo(() => cMfgRows ? GroupByAccount(cMfgRows.filter(r => SubClassifyMfgCost(r.account) === 'labor'))    : null, [compareRows]);
+  const cOverhead = useMemo(() => cMfgRows ? GroupByAccount(cMfgRows.filter(r => SubClassifyMfgCost(r.account) === 'overhead')) : null, [compareRows]);
+
+  const totalMaterial = Sum(material);
+  const totalLabor    = Sum(labor);
+  const totalOverhead = Sum(overhead);
+  const totalMfgCost  = totalMaterial + totalLabor + totalOverhead;
+
+  const cTotalMaterial = cMaterial ? Sum(cMaterial) : undefined;
+  const cTotalLabor    = cLabor    ? Sum(cLabor)    : undefined;
+  const cTotalOverhead = cOverhead ? Sum(cOverhead) : undefined;
+  const cTotalMfgCost  = cTotalMaterial !== undefined && cTotalLabor !== undefined && cTotalOverhead !== undefined
+    ? cTotalMaterial + cTotalLabor + cTotalOverhead : undefined;
+
+  if (mfgRows.length === 0) return <EmptyState />;
+
+  const compare       = !!compareRows;
+  const currentRange  = GetDateRange(mfgRows);
+  const compareRange  = cMfgRows && cMfgRows.length > 0 ? GetDateRange(cMfgRows) : null;
+
+  function CAmt(map: Map<string, number> | null, account: string): number | undefined {
+    return map ? (map.get(account) ?? 0) : undefined;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div className="border-b border-slate-100 px-4 py-3.5 text-center">
+        <p className="text-base font-semibold text-slate-900">제조원가명세서</p>
+        {currentRange && (
+          <p className="mt-1 text-xs text-slate-500">
+            당기&nbsp;&nbsp;{currentRange.start} 부터&nbsp;&nbsp;{currentRange.end} 까지
+          </p>
+        )}
+        {compareRange && (
+          <p className="mt-0.5 text-xs text-blue-400">
+            전기&nbsp;&nbsp;{compareRange.start} 부터&nbsp;&nbsp;{compareRange.end} 까지
+          </p>
+        )}
+        <p className="mt-0.5 text-xs text-slate-400">(단위: 원)</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[320px]">
+          <TableHeader compare={compare} currentYear={currentRange?.end.slice(0, 4)} compareYear={compareRange?.end.slice(0, 4)} />
+          <tbody>
+            {/* I. 재료비 */}
+            {material.size > 0 && (
+              <>
+                <SectionRow roman="I." label="재료비" total={totalMaterial} compareTotal={cTotalMaterial} />
+                {Array.from(material.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cMaterial, account)} />
+                ))}
+              </>
+            )}
+
+            {/* II. 노무비 */}
+            {labor.size > 0 && (
+              <>
+                <SectionRow roman="II." label="노무비" total={totalLabor} compareTotal={cTotalLabor} />
+                {Array.from(labor.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cLabor, account)} />
+                ))}
+              </>
+            )}
+
+            {/* III. 제조경비 */}
+            {overhead.size > 0 && (
+              <>
+                <SectionRow roman="III." label="제조경비" total={totalOverhead} compareTotal={cTotalOverhead} />
+                {Array.from(overhead.entries()).map(([account, amount]) => (
+                  <AccountRow key={account} account={account} amount={amount} compareAmount={CAmt(cOverhead, account)} />
+                ))}
+              </>
+            )}
+
+            {/* 당기총제조원가 */}
+            <SubtotalRow label="당기총제조원가" value={totalMfgCost} compareValue={cTotalMfgCost} bold />
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── 계정 분류 뷰 ────────────────────────────────────────────────
 
 const typeLabels: Record<AccountType, string> = {
   revenue:        "매출",
   cogs:           "매출원가",
+  mfg_cost:       "제조원가",
   expense:        "판관비",
   non_op_income:  "영업외수익",
   non_op_expense: "영업외비용",
@@ -519,6 +624,7 @@ const typeLabels: Record<AccountType, string> = {
 const typeColors: Record<AccountType, string> = {
   revenue:        "bg-blue-100 text-blue-700",
   cogs:           "bg-orange-100 text-orange-700",
+  mfg_cost:       "bg-yellow-100 text-yellow-700",
   expense:        "bg-purple-100 text-purple-700",
   non_op_income:  "bg-sky-100 text-sky-700",
   non_op_expense: "bg-pink-100 text-pink-700",
@@ -528,7 +634,7 @@ const typeColors: Record<AccountType, string> = {
   other:          "bg-amber-100 text-amber-800",
 };
 
-const allTypes: AccountType[] = ["revenue", "cogs", "expense", "non_op_income", "non_op_expense", "asset", "liability", "equity", "other"];
+const allTypes: AccountType[] = ["revenue", "cogs", "mfg_cost", "expense", "non_op_income", "non_op_expense", "asset", "liability", "equity", "other"];
 
 function ClassifyView({
   rows,
@@ -744,6 +850,40 @@ async function ExportBalanceSheet(rows: FinanceRow[], filename: string) {
   XLSX.writeFile(wb, `${filename}_재무상태표.xlsx`);
 }
 
+async function ExportMfgCostStatement(rows: FinanceRow[], filename: string) {
+  const XLSX = await import("xlsx");
+  const mfgRows = rows.filter(r => r.type === 'mfg_cost');
+  const material = GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'material'));
+  const labor    = GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'labor'));
+  const overhead = GroupByAccount(mfgRows.filter(r => SubClassifyMfgCost(r.account) === 'overhead'));
+
+  const totalMaterial = Sum(material);
+  const totalLabor    = Sum(labor);
+  const totalOverhead = Sum(overhead);
+  const totalMfgCost  = totalMaterial + totalLabor + totalOverhead;
+
+  const data: Row[] = [
+    ['계정과목', '금액', '합계'],
+    ...(material.size > 0 ? [
+      ['I. 재료비', null, totalMaterial] as Row,
+      ...Array.from(material.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(labor.size > 0 ? [
+      ['II. 노무비', null, totalLabor] as Row,
+      ...Array.from(labor.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ...(overhead.size > 0 ? [
+      ['III. 제조경비', null, totalOverhead] as Row,
+      ...Array.from(overhead.entries()).map(([a, v]): Row => [`  ${a}`, v, null]),
+    ] : []),
+    ['당기총제조원가', null, totalMfgCost],
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, MakeSheet(XLSX, data, [32, 18, 18]), '제조원가명세서');
+  XLSX.writeFile(wb, `${filename}_제조원가명세서.xlsx`);
+}
+
 // ─── 메인 컴포넌트 ───────────────────────────────────────────────
 
 interface ReportViewerProps {
@@ -763,6 +903,11 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
 
   const hasBalanceSheet = useMemo(
     () => rows.some(r => r.type === "asset" || r.type === "liability" || r.type === "equity"),
+    [rows]
+  );
+
+  const hasMfgCost = useMemo(
+    () => rows.some(r => r.type === "mfg_cost"),
     [rows]
   );
 
@@ -817,11 +962,12 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
   const tabs: { value: Tab; label: string; disabled?: boolean }[] = [
     { value: "dashboard", label: "대시보드" },
     { value: "income",    label: "손익계산서" },
-    { value: "balance",   label: "재무상태표", disabled: !hasBalanceSheet },
+    { value: "balance",   label: "재무상태표",    disabled: !hasBalanceSheet },
+    { value: "mfg_cost",  label: "제조원가명세서", disabled: !hasMfgCost },
     { value: "classify",  label: "계정 분류" },
   ];
 
-  const isStatementTab = tab === "income" || tab === "balance";
+  const isStatementTab = tab === "income" || tab === "balance" || tab === "mfg_cost";
   const otherCount = useMemo(() => {
     const seen = new Set<string>();
     return rows.filter(r => { if (r.type === "other" && !seen.has(r.account)) { seen.add(r.account); return true; } return false; }).length;
@@ -829,8 +975,9 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
 
   async function HandleExcelExport() {
     const name = reportName.replace(/\.(xlsx|xls)$/i, "");
-    if (tab === "income")  await ExportIncomeStatement(rows, name);
-    if (tab === "balance") await ExportBalanceSheet(rows, name);
+    if (tab === "income")   await ExportIncomeStatement(rows, name);
+    if (tab === "balance")  await ExportBalanceSheet(rows, name);
+    if (tab === "mfg_cost") await ExportMfgCostStatement(rows, name);
   }
 
   return (
@@ -913,8 +1060,9 @@ export default function ReportViewer({ rows: initialRows, reportName, otherRepor
 
       {/* 재무제표 탭 (인쇄 대상) */}
       <div ref={printRef}>
-        {tab === "income"  && <IncomeStatementView rows={rows} compareRows={compareRows ?? undefined} />}
-        {tab === "balance" && <BalanceSheetView rows={rows} compareRows={compareRows ?? undefined} />}
+        {tab === "income"    && <IncomeStatementView rows={rows} compareRows={compareRows ?? undefined} />}
+        {tab === "balance"   && <BalanceSheetView rows={rows} compareRows={compareRows ?? undefined} />}
+        {tab === "mfg_cost"  && <MfgCostView rows={rows} compareRows={compareRows ?? undefined} />}
       </div>
 
       {/* 계정 분류 탭 */}

@@ -1,4 +1,4 @@
-export type AccountType = 'revenue' | 'cogs' | 'expense' | 'non_op_income' | 'non_op_expense' | 'asset' | 'liability' | 'equity' | 'other';
+export type AccountType = 'revenue' | 'cogs' | 'mfg_cost' | 'expense' | 'non_op_income' | 'non_op_expense' | 'asset' | 'liability' | 'equity' | 'other';
 
 export interface Report {
   id: string;
