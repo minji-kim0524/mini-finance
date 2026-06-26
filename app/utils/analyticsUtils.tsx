@@ -36,12 +36,17 @@ export function GetChartTheme(isDark: boolean) {
   };
 }
 
-export function BuildStats(reports: Report[]) {
+const FREE_PLAN_REPORT_LIMIT = 3;
+
+export function BuildStats(reports: Report[], plan: string = "free") {
   const totalRevenue = reports.reduce((s, r) => s + r.total_revenue, 0);
   const totalOp      = reports.reduce((s, r) => s + r.operating_profit, 0);
   const avgMargin    = totalRevenue > 0 ? (totalOp / totalRevenue) * 100 : 0;
+  const reportCountValue = plan === "free"
+    ? `${reports.length}/${FREE_PLAN_REPORT_LIMIT}개`
+    : `${reports.length}개`;
   return [
-    { label: "전체 리포트",     value: `${reports.length}개`,      sub: "업로드된 파일" },
+    { label: "전체 리포트",     value: reportCountValue,            sub: "업로드된 파일" },
     { label: "총 매출",         value: FormatKRW(totalRevenue),     sub: "전체 합산" },
     { label: "총 영업이익",     value: FormatKRW(totalOp),         sub: "전체 합산",  color: totalOp  >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500" },
     { label: "평균 영업이익률", value: `${avgMargin.toFixed(1)}%`, sub: "전체 평균",  color: avgMargin >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-500" },

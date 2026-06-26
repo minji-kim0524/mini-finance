@@ -40,10 +40,12 @@ export default function AnalyticsDashboard({
   reports,
   initialRows,
   initialReportId,
+  plan,
 }: {
   reports: Report[];
   initialRows: FinanceRow[];
   initialReportId: string | null;
+  plan: string;
 }) {
   const { theme } = UseTheme();
   const { gridColor, tickColor, tooltipStyle, axisTick } = GetChartTheme(theme === "dark");
@@ -144,7 +146,7 @@ export default function AnalyticsDashboard({
     );
   }
 
-  const stats = BuildStats(reports);
+  const stats = BuildStats(reports, plan);
 
   return (
     <div className="space-y-5">

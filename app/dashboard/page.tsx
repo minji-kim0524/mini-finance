@@ -85,6 +85,7 @@ export default async function DashboardPage() {
         reports={reports}
         initialRows={(rows ?? []) as FinanceRow[]}
         initialReportId={mostRecent.id}
+        plan={plan}
       />
     </div>
   );

@@ -18,16 +18,19 @@ export default function DashboardChart({
   reports,
   initialRows,
   initialReportId,
+  plan,
 }: {
   reports: Report[];
   initialRows: FinanceRow[];
   initialReportId: string;
+  plan: string;
 }) {
   return (
     <AnalyticsDashboard
       reports={reports}
       initialRows={initialRows}
       initialReportId={initialReportId}
+      plan={plan}
     />
   );
 }
