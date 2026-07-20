@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
@@ -15,24 +15,39 @@ export function UseTheme() {
   return useContext(ThemeCtx);
 }
 
+const THEME_KEY = "theme";
+
+function getSnapshot(): Theme {
+  const saved = localStorage.getItem(THEME_KEY) as Theme | null;
+  if (saved) return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function getServerSnapshot(): Theme {
+  return "light";
+}
+
+function subscribe(onStoreChange: () => void) {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", onStoreChange);
+  window.addEventListener("storage", onStoreChange);
+  return () => {
+    mediaQuery.removeEventListener("change", onStoreChange);
+    window.removeEventListener("storage", onStoreChange);
+  };
+}
+
 export default function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null;
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const initial: Theme = saved ?? (prefersDark ? "dark" : "light");
-    setTheme(initial);
-    document.documentElement.classList.toggle("dark", initial === "dark");
-  }, []);
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
   function Toggle() {
-    setTheme((prev) => {
-      const next: Theme = prev === "light" ? "dark" : "light";
-      document.documentElement.classList.toggle("dark", next === "dark");
-      localStorage.setItem("theme", next);
-      return next;
-    });
+    const next: Theme = theme === "light" ? "dark" : "light";
+    localStorage.setItem(THEME_KEY, next);
+    window.dispatchEvent(new StorageEvent("storage", { key: THEME_KEY }));
   }
 
   return <ThemeCtx.Provider value={{ theme, toggle: Toggle }}>{children}</ThemeCtx.Provider>;
