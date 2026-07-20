@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CreateClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 interface UserMenuProps {
   name: string | null;
@@ -13,7 +14,13 @@ interface UserMenuProps {
   avatarUrl?: string | null;
 }
 
-export default function UserMenu({ name, email, plan, hasCustomerId, avatarUrl }: UserMenuProps) {
+export default function UserMenu({
+  name,
+  email,
+  plan,
+  hasCustomerId,
+  avatarUrl,
+}: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -66,7 +73,13 @@ export default function UserMenu({ name, email, plan, hasCustomerId, avatarUrl }
         aria-haspopup="menu"
       >
         {avatarUrl ? (
-          <img src={avatarUrl} alt="프로필" className="h-full w-full object-cover" />
+          <Image
+            src={avatarUrl}
+            alt="프로필"
+            className="h-full w-full object-cover"
+            width={36}
+            height={36}
+          />
         ) : (
           initials
         )}
@@ -78,16 +91,27 @@ export default function UserMenu({ name, email, plan, hasCustomerId, avatarUrl }
           aria-label="사용자 메뉴"
           className="absolute right-0 top-11 z-20 w-56 rounded-2xl border border-slate-200 bg-white py-2 shadow-lg shadow-slate-200/60 dark:border-slate-700 dark:bg-slate-900 dark:shadow-slate-900/60"
         >
-          <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800" role="none">
+          <div
+            className="border-b border-slate-100 px-4 py-3 dark:border-slate-800"
+            role="none"
+          >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{name ?? "사용자"}</p>
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {name ?? "사용자"}
+              </p>
               {plan === "pro" ? (
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">Pro</span>
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-600 dark:bg-blue-900/40 dark:text-blue-300">
+                  Pro
+                </span>
               ) : (
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">Free</span>
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                  Free
+                </span>
               )}
             </div>
-            <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">{email}</p>
+            <p className="mt-0.5 truncate text-xs text-slate-400 dark:text-slate-500">
+              {email}
+            </p>
           </div>
           <Link
             href="/dashboard/profile"
